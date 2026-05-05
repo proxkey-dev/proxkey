@@ -122,14 +122,7 @@ export function Navigation({ onOpenAuth }: NavigationProps) {
               onClick={() => onOpenAuth('login')}
               className="border border-[#d6d2c8] bg-white px-4 py-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[#111]"
             >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenAuth('signup')}
-              className="border border-[#111] bg-[#111] px-4 py-2 text-[11px] font-medium uppercase tracking-[0.14em] text-white"
-            >
-              Sign Up
+              Sign in
             </button>
           </div>
         ) : (
@@ -214,7 +207,7 @@ export function Navigation({ onOpenAuth }: NavigationProps) {
                     setMobileMenuOpen(false)
                     onOpenAuth('login')
                   }}
-                  className="flex min-h-11 w-full items-center border border-[#ddd4c5] bg-white px-4 text-left text-[15px] font-medium text-[#111]"
+                  className="flex min-h-11 w-full items-center justify-center border border-[#111] bg-[#111] px-4 text-[15px] font-medium uppercase tracking-[0.14em] text-white"
                 >
                   Sign in
                 </button>
@@ -231,17 +224,6 @@ export function Navigation({ onOpenAuth }: NavigationProps) {
                 </button>
               )}
             </nav>
-
-            <button
-              type="button"
-              onClick={() => {
-                setMobileMenuOpen(false)
-                onOpenAuth('signup')
-              }}
-              className="mt-4 flex min-h-11 w-full items-center justify-center border border-[#ff5a1f] bg-[#ff5a1f] px-4 text-sm font-medium uppercase tracking-[0.14em] text-white"
-            >
-              Start triaging free
-            </button>
           </div>
         </div>
       ) : null}

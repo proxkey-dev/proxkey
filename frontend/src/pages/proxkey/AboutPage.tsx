@@ -73,7 +73,7 @@ export function AboutPage() {
             </Link>
             <span aria-hidden="true">|</span>
             <Link to="/login" reloadDocument className="transition-colors hover:text-[#e8e8e8]">
-              Sign in →
+              Sign in
             </Link>
             <span aria-hidden="true">|</span>
             <a

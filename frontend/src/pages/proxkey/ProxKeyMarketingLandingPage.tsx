@@ -283,20 +283,11 @@ export function ProxKeyMarketingLandingPage() {
               |
             </span>
             <Link
-              to="/signup?plan=free"
-              className="transition-colors hover:text-[#e8e8e8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4ade80]"
-            >
-              Sign up
-            </Link>
-            <span aria-hidden="true" className="text-[#2a2a2a]">
-              |
-            </span>
-            <Link
               to="/login"
               reloadDocument
               className="transition-colors hover:text-[#e8e8e8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4ade80]"
             >
-              Sign in →
+              Sign in
             </Link>
             <span aria-hidden="true" className="text-[#2a2a2a]">
               |
@@ -323,19 +314,12 @@ export function ProxKeyMarketingLandingPage() {
               Docs
             </Link>
             <Link
-              to="/signup?plan=free"
-              className="py-2 hover:text-[#e8e8e8]"
-              onClick={() => setMobileNavOpen(false)}
-            >
-              Sign up
-            </Link>
-            <Link
               to="/login"
               reloadDocument
               className="py-2 hover:text-[#e8e8e8]"
               onClick={() => setMobileNavOpen(false)}
             >
-              Sign in →
+              Sign in
             </Link>
             <a
               href={NavGitHubHref()}

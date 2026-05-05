@@ -36,6 +36,7 @@ export function BottomActionBar() {
   useEffect(() => {
     if (
       location.pathname !== '/' &&
+      location.pathname !== '/login' &&
       location.pathname !== '/signup' &&
       location.pathname !== '/signin'
     ) {
@@ -72,7 +73,7 @@ export function BottomActionBar() {
         </div>
         <div className="flex gap-2">
           <ActionButton label="Generate sample packet" onClick={() => navigate('/demo')} />
-          <ActionButton label="Start free" primary onClick={() => navigate('/signup?plan=free')} />
+          <ActionButton label="Sign in" primary onClick={() => navigate('/login')} />
         </div>
       </div>
     </div>

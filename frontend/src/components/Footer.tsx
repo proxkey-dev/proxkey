@@ -62,10 +62,10 @@ export function Footer() {
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link
-                to="/signup?plan=free"
+                to="/login"
                 className="border border-[#ff5a1f] bg-[#ff5a1f] px-5 py-3 text-sm font-medium uppercase tracking-[0.14em] text-white"
               >
-                Start triaging incidents
+                Sign in
               </Link>
               <Link
                 to="/demo"
@@ -111,10 +111,10 @@ export function Footer() {
             dependencies, and incident signals.
           </p>
           <Link
-            to="/signup?plan=free"
+            to="/login"
             className="flex min-h-11 w-full items-center justify-center border border-[#ff5a1f] bg-[#ff5a1f] px-4 text-sm font-medium uppercase tracking-[0.14em] text-white"
           >
-            Start triaging incidents
+            Sign in
           </Link>
         </div>
 

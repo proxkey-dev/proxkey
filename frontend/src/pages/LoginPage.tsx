@@ -99,22 +99,6 @@ export default function LoginPage() {
             </button>
           )}
 
-          {authStrategy === 'auth0' ? (
-            <>
-              <div className="my-5 flex items-center gap-3">
-                <hr className="flex-1 border-[#1e1e1e]" />
-                <span className="text-xs text-[#3a3a3a]">or</span>
-                <hr className="flex-1 border-[#1e1e1e]" />
-              </div>
-
-              <p className="text-center text-sm text-[#6b6b6b]">
-                Don&apos;t have an account?{' '}
-                <Link to="/signup" className="font-medium text-[#e8e8e8] hover:text-[#4ade80]">
-                  Sign up free
-                </Link>
-              </p>
-            </>
-          ) : null}
         </div>
 
         <p className="mt-6 text-center text-xs text-[#3a3a3a]">
