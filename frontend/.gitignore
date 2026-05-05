@@ -5,6 +5,8 @@ dist/
 .venv/
 server/dist/
 .wrangler/
+.supabase/.temp/
+**/supabase/.temp/
 .DS_Store
 tsconfig.tsbuildinfo
 .DS_Store
