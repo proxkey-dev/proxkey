@@ -21,7 +21,9 @@
     "dev:worker": "pnpm --filter @proxkey/worker run dev",
     "frontend:cli-setup": "npm run prod:cli-setup --prefix frontend",
     "frontend:cli-setup:railway": "npm run prod:cli-setup:railway --prefix frontend",
-    "frontend:cli-setup:auth0": "npm run prod:cli-setup:auth0 --prefix frontend"
+    "frontend:cli-setup:auth0": "npm run prod:cli-setup:auth0 --prefix frontend",
+    "website:sync": "bash scripts/sync-proxkey-website.sh",
+    "website:sync:dry": "bash scripts/sync-proxkey-website.sh --dry-run"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

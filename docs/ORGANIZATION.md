@@ -32,3 +32,16 @@ cd cli && npm ci && npm run build && npm publish --access public
 ```
 
 Or push tag `cli/v0.x.x` on `main` so GitHub Actions runs `publish-cli.yml`.
+
+## Mirror `frontend/` → [notomer/proxkey-website](https://github.com/notomer/proxkey-website)
+
+From the monorepo root, copy `frontend/` into the sibling checkout used as the standalone website repo (default `../proxkey-website`). `rsync --delete` stays aligned with the monorepo while **excluding** the mirror’s `.git`, `node_modules`, build outputs, Supabase CLI temp files, and local `.env` files.
+
+```bash
+pnpm run website:sync:dry    # preview
+pnpm run website:sync
+
+PROXKEY_WEBSITE_DIR=~/src/proxkey-website pnpm run website:sync
+```
+
+Then commit and push in the website repo as usual.

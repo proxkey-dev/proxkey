@@ -58,6 +58,15 @@ pnpm run frontend:cli-setup:railway
 pnpm run frontend:cli-setup:auth0
 ```
 
+Keep [notomer/proxkey-website](https://github.com/notomer/proxkey-website) in sync with `frontend/`:
+
+```bash
+pnpm run website:sync:dry
+pnpm run website:sync     # default destination: ../proxkey-website (override PROXKEY_WEBSITE_DIR)
+```
+
+Details: [docs/ORGANIZATION.md](docs/ORGANIZATION.md).
+
 ## CLI & SDK
 
 | Artifact | Path | Publish |
