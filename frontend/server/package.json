@@ -20,6 +20,7 @@
     "check": "npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
+    "@clerk/backend": "^3.4.4",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^10.0.0",
     "@fastify/helmet": "^12.0.0",

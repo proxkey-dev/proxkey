@@ -175,6 +175,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setRole(payload.user.role)
   }
 
+  const [hydrateNonce, setHydrateNonce] = useState(0)
+
   useEffect(() => {
     let isMounted = true
 
@@ -247,6 +249,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => {
       isMounted = false
     }
+  }, [hydrateNonce])
+
+  useEffect(() => {
+    function onProxkeyAuthRefresh(): void {
+      setLoading(true)
+      setHydrateNonce((value) => value + 1)
+    }
+    window.addEventListener('proxkey-auth-refresh', onProxkeyAuthRefresh)
+    return () => window.removeEventListener('proxkey-auth-refresh', onProxkeyAuthRefresh)
   }, [])
 
   const value = useMemo<AuthContextType>(

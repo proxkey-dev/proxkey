@@ -10,8 +10,10 @@ import {
   WasteFlagStatus,
   WasteFlagType,
 } from '@prisma/client'
+import { createClerkClient, verifyToken } from '@clerk/backend'
 import { z } from 'zod'
 import type { ProxKeyConfig } from './config'
+import { createSession, findOrProvisionClerkUser } from './auth'
 import { daysAgo, getRepoDailySpend30d, getRepoWowMap, getSpendBreakdown, getSpendSummary, getWeeklySpendSeries } from './spend-queries'
 
 function gravatarUrl(email: string): string {
@@ -261,6 +263,91 @@ export async function registerDashboardApi(
   /** Public: lets the SPA disable GitHub links when OAuth env is missing (avoids a JSON error page). */
   app.get('/api/auth/capabilities', async (_request, _reply) => {
     return { githubOAuth: Boolean(config.GITHUB_CLIENT_ID) }
+  })
+
+  app.post('/api/auth/clerk', async (request, reply) => {
+    const secretKey = config.CLERK_SECRET_KEY
+    if (!secretKey) {
+      return reply.status(503).send({
+        error: 'CLERK_NOT_CONFIGURED',
+        message: 'Set CLERK_SECRET_KEY on the API to sync Clerk sessions.',
+      })
+    }
+
+    const bearer = request.headers.authorization?.replace(/^Bearer\s+/i, '').trim()
+    if (!bearer) {
+      return reply.status(401).send({ error: 'UNAUTHORIZED' })
+    }
+
+    let payload: NonNullable<Awaited<ReturnType<typeof verifyToken>>>
+    try {
+      payload = await verifyToken(bearer, { secretKey })
+    } catch {
+      return reply.status(401).send({
+        error: 'INVALID_CLERK_TOKEN',
+        message: 'Invalid or expired Clerk session.',
+      })
+    }
+
+    async function clerkProfile(): Promise<{ email: string; name: string }> {
+      const rec = payload as Record<string, unknown>
+      const primaryEmailClaim =
+        typeof rec.primary_email_address === 'string' ? rec.primary_email_address : undefined
+      const emailFromJwt =
+        typeof rec.email === 'string' ? rec.email : primaryEmailClaim
+      if (emailFromJwt) {
+        const fn = typeof rec.first_name === 'string' ? rec.first_name : ''
+        const ln = typeof rec.last_name === 'string' ? rec.last_name : ''
+        const nm = `${fn} ${ln}`.trim()
+        return { email: emailFromJwt, name: nm || emailFromJwt.split('@')[0] || 'ProxKey User' }
+      }
+
+      const sub = typeof payload.sub === 'string' ? payload.sub : null
+      if (!sub) {
+        throw new Error('Clerk session missing subject')
+      }
+      const client = createClerkClient({ secretKey })
+      const u = await client.users.getUser(sub)
+      const primaryAddr =
+        u.emailAddresses?.find((e) => e.id === u.primaryEmailAddressId) ?? u.emailAddresses?.[0]
+      const email = primaryAddr?.emailAddress
+      if (!email) {
+        throw new Error('Clerk user has no email')
+      }
+      const name =
+        [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || email.split('@')[0] || 'ProxKey User'
+      return { email, name }
+    }
+
+    let profile: { email: string; name: string }
+    try {
+      profile = await clerkProfile()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to resolve Clerk user'
+      return reply.status(400).send({ error: 'CLERK_PROFILE_FAILED', message: msg })
+    }
+
+    let userRecord
+    try {
+      userRecord = await findOrProvisionClerkUser({
+        email: profile.email,
+        displayName: profile.name,
+      })
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Provisioning failed'
+      const conflict =
+        msg.includes('workspace already exists') || msg.includes('company workspace already exists')
+      return reply.status(conflict ? 409 : 400).send({
+        error: 'CLERK_PROVISION_FAILED',
+        message: msg,
+      })
+    }
+
+    const { token } = await createSession({
+      userId: userRecord.id,
+      config,
+    })
+    return { accessToken: token }
   })
 
   app.get('/api/auth/github', async (_request, reply) => {

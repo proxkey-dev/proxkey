@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import {
+  ProxkeySignOutButtonPlain,
+  ProxkeySignOutButtonWithClerk,
+} from './auth/ProxkeySignOutControl'
 import { ProxKeyLogo } from './ProxKeyLogo'
 import { useAuth } from '../contexts/AuthContext'
+
+const clerkAuthEnabled = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY?.trim()
 
 type AuthMode = 'login' | 'signup'
 
@@ -49,7 +55,7 @@ export function Navigation({ onOpenAuth }: NavigationProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [isSigningOut, setIsSigningOut] = useState(false)
+  const SignOutBtn = clerkAuthEnabled ? ProxkeySignOutButtonWithClerk : ProxkeySignOutButtonPlain
   const displayName =
     user?.name?.trim() ||
     user?.user_metadata?.full_name?.trim() ||
@@ -73,14 +79,6 @@ export function Navigation({ onOpenAuth }: NavigationProps) {
       document.body.style.overflow = originalOverflow
     }
   }, [mobileMenuOpen])
-
-  async function handleSignOut(): Promise<void> {
-    setIsSigningOut(true)
-    await signOut()
-    setIsSigningOut(false)
-    setMobileMenuOpen(false)
-    navigate('/')
-  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#ddd4c5] bg-[rgba(246,244,239,0.96)] backdrop-blur-xl">
@@ -134,16 +132,16 @@ export function Navigation({ onOpenAuth }: NavigationProps) {
             >
               {displayName}
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                void handleSignOut()
+            <SignOutBtn
+              proxkeySignOut={() => signOut()}
+              afterSignOut={() => {
+                setMobileMenuOpen(false)
+                navigate('/')
               }}
-              disabled={isSigningOut}
               className="border border-[#111] bg-[#111] px-4 py-2 text-[11px] font-medium uppercase tracking-[0.14em] text-white disabled:opacity-70"
             >
-              {isSigningOut ? 'Signing out' : 'Sign out'}
-            </button>
+              Sign out
+            </SignOutBtn>
           </div>
         )}
       </div>
@@ -212,16 +210,16 @@ export function Navigation({ onOpenAuth }: NavigationProps) {
                   Sign in
                 </button>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    void handleSignOut()
+                <SignOutBtn
+                  proxkeySignOut={() => signOut()}
+                  afterSignOut={() => {
+                    setMobileMenuOpen(false)
+                    navigate('/')
                   }}
-                  disabled={isSigningOut}
                   className="flex min-h-11 w-full items-center border border-[#ddd4c5] bg-white px-4 text-left text-[15px] font-medium text-[#111] disabled:opacity-70"
                 >
-                  {isSigningOut ? 'Signing out' : 'Sign out'}
-                </button>
+                  Sign out
+                </SignOutBtn>
               )}
             </nav>
           </div>

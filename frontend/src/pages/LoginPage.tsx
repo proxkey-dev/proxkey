@@ -1,178 +1,91 @@
-import { useState, useEffect, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { SignIn } from '@clerk/react'
+import { dark } from '@clerk/themes'
+import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { AuthMethodButtons } from '../components/auth/AuthMethodButtons'
 
 export default function LoginPage() {
-  const { user, loading, authError, clearAuthError, signIn } = useAuth()
-  const navigate = useNavigate()
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [oauthNotice, setOauthNotice] = useState<string | null>(null)
+  const { user, loading } = useAuth()
+  const clerkPk = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY?.trim()
 
-  const [emailOpen, setEmailOpen] = useState(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-
-  useEffect(() => {
-    if (!loading && user) {
-      navigate('/dashboard', { replace: true })
-    }
-  }, [loading, user, navigate])
-
-  useEffect(() => {
-    if (authError && authError !== 'NO_WORKSPACE') {
-      setError(authError)
-    }
-  }, [authError])
-
-  async function submitEmail(e: FormEvent) {
-    e.preventDefault()
-    setError(null)
-    setOauthNotice(null)
-    if (!email.trim()) {
-      setError('Enter your email.')
-      return
-    }
-    if (!password) {
-      setError('Enter your password.')
-      return
-    }
-    setBusy(true)
-    const result = await signIn(email.trim().toLowerCase(), password)
-    setBusy(false)
-    if (result.error) {
-      setError(result.error.message)
-    }
+  if (!clerkPk) {
+    return (
+      <div className="flex min-h-screen flex-col bg-[#0a0a0a] px-6 py-14 text-[#e8e8e8]">
+        <main className="mx-auto max-w-lg">
+          <h1 className="text-xl font-semibold">Clerk publishable key missing</h1>
+          <p className="mt-3 text-sm leading-relaxed text-[#b8b8b8]">
+            Add{' '}
+            <code className="rounded bg-[#161616] px-2 py-0.5 text-[13px] text-[#4ade80]">
+              VITE_CLERK_PUBLISHABLE_KEY
+            </code>{' '}
+            to <code className="text-[13px]">frontend/.env.local</code>. The API needs{' '}
+            <code className="rounded bg-[#161616] px-2 py-0.5 text-[13px] text-[#4ade80]">
+              CLERK_SECRET_KEY
+            </code>{' '}
+            in <code className="text-[13px]">frontend/server/.env</code> so sign-in maps to ProxKey sessions.
+          </p>
+          <Link to="/" className="mt-8 inline-block text-sm text-[#4ade80] hover:underline">
+            ← Home
+          </Link>
+        </main>
+      </div>
+    )
   }
 
   if (loading) {
     return <div className="min-h-screen bg-[#0a0a0a]" />
   }
 
+  if (user) {
+    return <Navigate to="/dashboard" replace />
+  }
+
   return (
-    <div className="grid min-h-screen place-items-center bg-[#0a0a0a] px-4 py-12 text-[#e8e8e8]">
-      <main className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <p className="font-mono text-2xl font-semibold tracking-tight">ProxKey</p>
-          <p className="mt-1 text-sm text-[#6b6b6b]">Every CI dollar, explained.</p>
+    <div className="flex min-h-screen flex-col bg-[#0a0a0a] px-4 py-8 text-[#e8e8e8]">
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center">
+        <div className="mb-6 w-full text-center">
+          <Link to="/" className="font-mono text-2xl font-semibold tracking-tight hover:text-[#4ade80]">
+            ProxKey
+          </Link>
+          <p className="mt-1 text-sm text-[#6b6b6b]">Sign in to your workspace.</p>
         </div>
-
-        <div className="rounded-xl border border-[#1e1e1e] bg-[#111111] p-6 sm:p-8">
-          <h1 className="text-base font-semibold">Sign in</h1>
-          <p className="mt-2 text-xs text-[#6b6b6b]">
-            Use GitHub (session via the ProxKey API), or email and password. Google and Apple need
-            OAuth on the API first.
-          </p>
-
-          {oauthNotice ? (
-            <div className="mt-4 rounded border border-amber-900/40 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
-              {oauthNotice}
-            </div>
-          ) : null}
-          {error ? (
-            <div className="mt-4 rounded border border-red-900/50 bg-red-950/40 px-3 py-2 text-xs text-red-400">
-              {error}
-            </div>
-          ) : null}
-
-          <div className="mt-6">
-            <AuthMethodButtons
-              onGitHubClick={() => {
-                clearAuthError()
-                setError(null)
-              }}
-              onGitHubUnavailable={() =>
-                setOauthNotice(
-                  'GitHub sign-in is not configured on this API (missing GITHUB_CLIENT_ID). Use email or set OAuth env on the server.',
-                )
-              }
-              onGoogleClick={() =>
-                setOauthNotice(
-                  'Google sign-in requires OAuth credentials on the API. Use GitHub or email for now.',
-                )
-              }
-              onAppleClick={() =>
-                setOauthNotice(
-                  'Sign in with Apple requires OAuth credentials on the API. Use GitHub or email for now.',
-                )
-              }
-              onEmailClick={() => {
-                setOauthNotice(null)
-                setEmailOpen(true)
-              }}
-              googleDisabled={false}
-              appleDisabled={false}
-            />
-          </div>
-
-          {emailOpen ? (
-            <form className="mt-8 space-y-4 border-t border-[#1e1e1e] pt-8" onSubmit={submitEmail}>
-              <p className="text-xs font-medium uppercase tracking-wider text-[#6b6b6b]">
-                Email & password
-              </p>
-              <div>
-                <label htmlFor="li-email" className="mb-1.5 block text-xs text-[#a8a8a8]">
-                  Email
-                </label>
-                <input
-                  id="li-email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] px-3 py-2.5 text-sm outline-none focus:border-[#4ade80]"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="li-pass" className="mb-1.5 block text-xs text-[#a8a8a8]">
-                  Password
-                </label>
-                <input
-                  id="li-pass"
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] px-3 py-2.5 text-sm outline-none focus:border-[#4ade80]"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={busy}
-                className="w-full rounded-lg bg-[#e8e8e8] py-3 text-sm font-semibold text-[#0a0a0a] disabled:opacity-50"
-              >
-                {busy ? 'Signing in…' : 'Sign in'}
-              </button>
-            </form>
-          ) : null}
-        </div>
-
-        <p className="mt-6 text-center text-xs text-[#3a3a3a]">
-          New to ProxKey?{' '}
-          <Link to="/signup" className="font-medium text-[#e8e8e8] hover:text-[#4ade80]">
-            Create an account
-          </Link>
-        </p>
-        <p className="mt-2 text-center text-xs text-[#3a3a3a]">
-          Free for up to 3 repos. No credit card required.
-        </p>
-        <p className="mt-4 text-center text-[11px] text-[#3a3a3a]">
-          <Link to="/" className="hover:text-[#6b6b6b]">
-            Home
-          </Link>
-          <span className="mx-2 text-[#2a2a2a]">·</span>
-          <Link to="/about" className="hover:text-[#6b6b6b]">
-            About
-          </Link>
-          <span className="mx-2 text-[#2a2a2a]">·</span>
-          <Link to="/docs" className="hover:text-[#6b6b6b]">
-            Docs
+        <SignIn
+          routing="path"
+          path="/login"
+          appearance={{
+            baseTheme: dark,
+            variables: {
+              colorPrimary: '#4ade80',
+              colorTextOnPrimaryBackground: '#0a0a0a',
+            },
+          }}
+          signUpUrl="/signup"
+          forceRedirectUrl="/dashboard"
+          fallbackRedirectUrl="/dashboard"
+        />
+        <p className="mt-8 text-center text-xs text-[#3a3a3a]">
+          Need an account?{' '}
+          <Link className="text-[#e8e8e8] underline-offset-2 hover:text-[#4ade80] hover:underline" to="/signup">
+            Sign up
           </Link>
         </p>
       </main>
+      <footer className="mx-auto mb-6 flex w-full max-w-md justify-center gap-3 text-[11px] text-[#3a3a3a]">
+        <Link to="/" className="hover:text-[#6b6b6b]">
+          Home
+        </Link>
+        <span aria-hidden className="text-[#2a2a2a]">
+          ·
+        </span>
+        <Link to="/about" className="hover:text-[#6b6b6b]">
+          About
+        </Link>
+        <span aria-hidden className="text-[#2a2a2a]">
+          ·
+        </span>
+        <Link to="/docs" className="hover:text-[#6b6b6b]">
+          Docs
+        </Link>
+      </footer>
     </div>
   )
 }

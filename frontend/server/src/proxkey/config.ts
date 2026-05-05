@@ -70,6 +70,8 @@ const envSchema = z.object({
   GITHUB_WEBHOOK_SECRET: z.string().optional(),
   GITHUB_CLIENT_ID: z.string().optional(),
   GITHUB_CLIENT_SECRET: z.string().optional(),
+  /** Clerk Backend — verify JWT from the SPA (`POST /api/auth/clerk`). Not required if you only use email/password auth. */
+  CLERK_SECRET_KEY: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   JWT_SECRET: z.string().optional(),
   DASHBOARD_SESSION_SECRET: z.string().optional(),

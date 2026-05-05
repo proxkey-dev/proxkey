@@ -106,6 +106,77 @@ export async function createOrActivateUser(args: { email: string; password: stri
   })
 }
 
+/**
+ * Clerk SSO: reuse user by email or create owner + workspace (same workspace rules as password register).
+ */
+export async function findOrProvisionClerkUser(args: { email: string; displayName: string }) {
+  const email = normalizeEmail(args.email)
+
+  const existing = await prisma.user.findUnique({
+    where: { email },
+  })
+
+  if (existing) {
+    if (existing.status === UserStatus.DISABLED) {
+      throw new Error('This account is disabled.')
+    }
+    await prisma.user.update({
+      where: { id: existing.id },
+      data: { lastActive: new Date() },
+    })
+    return existing
+  }
+
+  const domain = email.split('@')[1] ?? ''
+  if (!domain) {
+    throw new Error('A work email is required.')
+  }
+
+  const existingOrganization = await prisma.organization.findFirst({
+    where: { domain },
+  })
+
+  if (existingOrganization) {
+    throw new Error('This company workspace already exists. Ask an admin to invite you or sign in.')
+  }
+
+  const baseName = args.displayName.trim() || email.split('@')[0] || 'ProxKey User'
+  const organizationName = `${baseName}'s workspace`
+  const orgSlug = toOrgSlug(organizationName) || 'workspace'
+  const fallbackDomain = `${orgSlug}-${crypto.randomUUID().slice(0, 6)}`
+
+  const organization = await prisma.organization.create({
+    data: {
+      name: organizationName.trim(),
+      domain: domain === PROXKEY_DOMAIN ? fallbackDomain : domain,
+      slug: createOrgSlug(organizationName),
+      plan: PlanTier.FREE,
+      subscriptionStatus: 'FREE',
+    },
+  })
+
+  const user = await prisma.user.create({
+    data: {
+      orgId: organization.id,
+      name: baseName,
+      email,
+      passwordHash: null,
+      role: UserRole.OWNER,
+      status: UserStatus.ACTIVE,
+      lastActive: new Date(),
+    },
+  })
+
+  await prisma.organization.update({
+    where: { id: organization.id },
+    data: {
+      createdByUserId: user.id,
+    },
+  })
+
+  return user
+}
+
 export async function registerUser(args: {
   email: string
   password: string

@@ -1,6 +1,12 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { Link, NavLink, Outlet } from 'react-router-dom'
+import {
+  ProxkeySignOutButtonPlain,
+  ProxkeySignOutButtonWithClerk,
+} from '../components/auth/ProxkeySignOutControl'
 import { useAuth } from '../contexts/AuthContext'
+
+const clerkAuthEnabled = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY?.trim()
 
 const nav = [
   { to: '/dashboard', end: true, label: 'Overview' },
@@ -33,9 +39,7 @@ function UserAvatar({ name, email }: { name?: string | null; email?: string }) {
 export default function DashboardLayout() {
   const auth = useAuth()
 
-  async function signOut(): Promise<void> {
-    await auth.signOut()
-  }
+  const SignOutBtn = clerkAuthEnabled ? ProxkeySignOutButtonWithClerk : ProxkeySignOutButtonPlain
 
   const orgName = auth.organization?.name ?? 'Organization'
   const displayName = auth.user?.name ?? auth.user?.email ?? ''
@@ -79,13 +83,12 @@ export default function DashboardLayout() {
             <UserAvatar name={auth.user?.name} email={auth.user?.email} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm text-[#e8e8e8]">{displayName}</p>
-              <button
-                type="button"
-                onClick={() => void signOut()}
+              <SignOutBtn
+                proxkeySignOut={() => auth.signOut()}
                 className="text-xs text-[#6b6b6b] underline-offset-2 hover:text-[#e8e8e8] hover:underline"
               >
                 Sign out
-              </button>
+              </SignOutBtn>
             </div>
           </div>
           <Link
@@ -100,13 +103,12 @@ export default function DashboardLayout() {
       <header className="sticky top-0 z-20 border-b border-[#1e1e1e] bg-[#0a0a0a] px-4 py-3 md:hidden">
         <div className="flex items-center justify-between gap-2">
           <span className="font-mono text-sm font-semibold">ProxKey</span>
-          <button
-            type="button"
-            onClick={() => void signOut()}
+          <SignOutBtn
+            proxkeySignOut={() => auth.signOut()}
             className="text-xs text-[#6b6b6b] hover:text-[#e8e8e8]"
           >
             Sign out
-          </button>
+          </SignOutBtn>
         </div>
         <nav className="mt-3 flex gap-1 overflow-x-auto pb-1" aria-label="Primary mobile">
           {nav.map((item) => (
