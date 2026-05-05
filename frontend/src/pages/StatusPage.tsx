@@ -21,25 +21,39 @@ function formatUptime(seconds: number): string {
 
 function DbStatusCell({ snapshot, loading }: { snapshot: PublicHealthStatus | null; loading: boolean }) {
   if (loading && !snapshot) {
-    return <span className="text-xl font-semibold text-[#e8e8e8]">…</span>
+    return (
+      <span
+        className="mt-2 inline-block h-8 w-8 shrink-0 rounded-full bg-[#2a2a2a]"
+        aria-label="Checking database"
+      />
+    )
   }
   const raw = snapshot?.database ?? ''
   const isOk = raw.toLowerCase() === 'ok'
+
+  if (isOk) {
+    return (
+      <span
+        className="mt-2 inline-block h-8 w-8 shrink-0 rounded-full bg-[#4ade80]"
+        title="Database reachable"
+        role="img"
+        aria-label="Database OK"
+      />
+    )
+  }
+
+  const detail = raw || 'unavailable'
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-2">
-      {isOk ? (
-        <span
-          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#4ade80] text-[#0a0a0a]"
-          title="Database reachable"
-          aria-hidden
-        >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.4}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </span>
-      ) : null}
-      <span className="text-xl font-semibold capitalize text-[#e8e8e8]">{raw || '—'}</span>
-    </div>
+    <span
+      className="mt-2 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#ef4444] text-white"
+      title={detail}
+      role="img"
+      aria-label={`Database not OK: ${detail}`}
+    >
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.4} aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" />
+      </svg>
+    </span>
   )
 }
 
