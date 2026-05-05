@@ -32,3 +32,6 @@ frontend/dist/
 
 cli/*.tgz
 
+# skills.sh: per-agent symlinks; repo copy lives under .agents/skills
+.devin/
+.windsurf/
