@@ -1,0 +1,24 @@
+{
+  "mirrors": [
+    {
+      "id": "proxkey-website",
+      "label": "github.com/notomer/proxkey-website",
+      "source": "frontend",
+      "destinationEnv": "PROXKEY_WEBSITE_DIR",
+      "destinationDefault": "../proxkey-website",
+      "preset": "website",
+      "createDestination": true,
+      "skipIfDestinationMissing": false
+    },
+    {
+      "id": "proxkey-cli",
+      "label": "github.com/proxkey-dev/CLI",
+      "source": "cli",
+      "destinationEnv": "PROXKEY_CLI_DIR",
+      "destinationDefault": "../proxkey-cli",
+      "preset": "nodePackage",
+      "createDestination": false,
+      "skipIfDestinationMissing": true
+    }
+  ]
+}

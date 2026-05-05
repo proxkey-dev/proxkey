@@ -58,11 +58,15 @@ pnpm run frontend:cli-setup:railway
 pnpm run frontend:cli-setup:auth0
 ```
 
-Keep [notomer/proxkey-website](https://github.com/notomer/proxkey-website) in sync with `frontend/`:
+Mirror split repos from [`scripts/repos-sync.config.json`](scripts/repos-sync.config.json) (website + optional CLI checkout):
 
 ```bash
-pnpm run website:sync:dry
-pnpm run website:sync     # default destination: ../proxkey-website (override PROXKEY_WEBSITE_DIR)
+pnpm run repos:sync:dry
+pnpm run repos:sync
+pnpm run repos:sync:push            # commit + push each mirror (optional)
+
+pnpm run website:sync:dry           # only proxkey-website
+pnpm run website:sync
 ```
 
 Details: [docs/ORGANIZATION.md](docs/ORGANIZATION.md).

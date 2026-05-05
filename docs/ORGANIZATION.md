@@ -33,15 +33,31 @@ cd cli && npm ci && npm run build && npm publish --access public
 
 Or push tag `cli/v0.x.x` on `main` so GitHub Actions runs `publish-cli.yml`.
 
-## Mirror `frontend/` → [notomer/proxkey-website](https://github.com/notomer/proxkey-website)
+## Mirror repos (split checkouts)
 
-From the monorepo root, copy `frontend/` into the sibling checkout used as the standalone website repo (default `../proxkey-website`). `rsync --delete` stays aligned with the monorepo while **excluding** the mirror’s `.git`, `node_modules`, build outputs, Supabase CLI temp files, and local `.env` files.
+Mirrors are defined in [`scripts/repos-sync.config.json`](../scripts/repos-sync.config.json). Defaults:
+
+| Id | Source | Destination (default) | Remote |
+| --- | --- | --- | --- |
+| `proxkey-website` | `frontend/` | `../proxkey-website` (`PROXKEY_WEBSITE_DIR`) | [notomer/proxkey-website](https://github.com/notomer/proxkey-website) |
+| `proxkey-cli` | `cli/` | `../proxkey-cli` (`PROXKEY_CLI_DIR`) | Optional sibling clone; **skipped** if the folder does not exist |
+
+From monorepo root:
 
 ```bash
-pnpm run website:sync:dry    # preview
-pnpm run website:sync
+pnpm run repos:sync:dry          # preview all mirrors
+pnpm run repos:sync              # rsync all (CLI mirror skipped until ../proxkey-cli exists)
 
-PROXKEY_WEBSITE_DIR=~/src/proxkey-website pnpm run website:sync
+pnpm run repos:sync:push         # sync then git commit + push each mirror (needs clean working tree)
+
+pnpm run website:sync             # only proxkey-website
+pnpm run website:sync:push
 ```
 
-Then commit and push in the website repo as usual.
+`rsync --delete` keeps the mirror aligned with the monorepo. Protected on the receiver: `.git/`, dependency dirs, build outputs, Supabase CLI temp, local `.env` files (see presets in `scripts/sync-repos.mjs`).
+
+Commit message for `--push`:
+
+```bash
+SYNC_COMMIT_MESSAGE="sync: your note" pnpm run repos:sync:push
+```

@@ -22,8 +22,12 @@
     "frontend:cli-setup": "npm run prod:cli-setup --prefix frontend",
     "frontend:cli-setup:railway": "npm run prod:cli-setup:railway --prefix frontend",
     "frontend:cli-setup:auth0": "npm run prod:cli-setup:auth0 --prefix frontend",
-    "website:sync": "bash scripts/sync-proxkey-website.sh",
-    "website:sync:dry": "bash scripts/sync-proxkey-website.sh --dry-run"
+    "repos:sync": "node scripts/sync-repos.mjs",
+    "repos:sync:dry": "node scripts/sync-repos.mjs --dry-run",
+    "repos:sync:push": "node scripts/sync-repos.mjs --push",
+    "website:sync": "node scripts/sync-repos.mjs --only proxkey-website",
+    "website:sync:dry": "node scripts/sync-repos.mjs --only proxkey-website --dry-run",
+    "website:sync:push": "node scripts/sync-repos.mjs --only proxkey-website --push"
   },
   "devDependencies": {
     "typescript": "^5.7.3"
