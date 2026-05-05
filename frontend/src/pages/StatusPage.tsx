@@ -170,16 +170,28 @@ export default function StatusPage() {
       </main>
 
       <footer className="border-t border-[#1e1e1e] bg-[#0a0a0a] px-4 py-8 md:px-6">
-        <div className="mx-auto flex max-w-5xl flex-col gap-4 text-sm text-[#6b6b6b] md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto flex max-w-5xl flex-col gap-6 text-sm text-[#6b6b6b] md:flex-row md:items-center md:justify-between">
           <p className="font-mono text-[#e8e8e8]">ProxKey © {new Date().getFullYear()}</p>
-          <div className="flex flex-wrap gap-x-4 gap-y-2">
-            <Link to="/" className="hover:text-[#e8e8e8]">
-              Home
-            </Link>
-            <Link to="/about" className="hover:text-[#e8e8e8]">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <a href="mailto:hello@proxkey.dev" className="transition-colors hover:text-[#e8e8e8]">
+              hello@proxkey.dev
+            </a>
+            <span aria-hidden="true" className="hidden text-[#2a2a2a] sm:inline">
+              |
+            </span>
+            <span className="text-[#e8e8e8]" aria-current="page">
+              Status
+            </span>
+            <span aria-hidden="true" className="hidden text-[#2a2a2a] sm:inline">
+              |
+            </span>
+            <Link to="/about" className="transition-colors hover:text-[#e8e8e8]">
               About
             </Link>
-            <Link to="/docs" className="hover:text-[#e8e8e8]">
+            <span aria-hidden="true" className="hidden text-[#2a2a2a] sm:inline">
+              |
+            </span>
+            <Link to="/docs" className="transition-colors hover:text-[#e8e8e8]">
               Docs
             </Link>
           </div>

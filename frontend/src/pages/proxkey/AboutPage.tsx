@@ -67,6 +67,10 @@ export function AboutPage() {
               About
             </Link>
             <span aria-hidden="true">|</span>
+            <Link to="/status" className="transition-colors hover:text-[#e8e8e8]">
+              Status
+            </Link>
+            <span aria-hidden="true">|</span>
             <Link to="/docs" className="transition-colors hover:text-[#e8e8e8]">
               Docs
             </Link>
