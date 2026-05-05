@@ -26,6 +26,28 @@ function GlobeIcon() {
   )
 }
 
+/** Green filled badge with contrasting checkmark (replaces textual monogram). */
+function FounderBadge() {
+  return (
+    <div
+      className="flex h-24 w-24 shrink-0 select-none items-center justify-center rounded-full border border-[#1e1e1e] md:h-28 md:w-28"
+      aria-hidden="true"
+    >
+      <svg viewBox="0 0 64 64" className="h-full w-full">
+        <circle cx="32" cy="32" r="31" fill="#4ade80" />
+        <path
+          fill="none"
+          stroke="#0a0a0a"
+          strokeWidth="5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M18 33l10 11 18-21"
+        />
+      </svg>
+    </div>
+  )
+}
+
 export function AboutPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] font-['IBM_Plex_Sans',system-ui,sans-serif] text-[#e8e8e8] antialiased">
@@ -128,14 +150,7 @@ export function AboutPage() {
             </h2>
 
             <div className="mt-10 grid gap-10 md:grid-cols-[auto_1fr] md:gap-16">
-              <div className="shrink-0">
-                <div
-                  className="flex h-24 w-24 select-none items-center justify-center rounded border border-[#1e1e1e] bg-[#111111] font-mono text-2xl font-semibold tracking-tight text-[#4ade80] md:h-28 md:w-28 md:text-[1.85rem]"
-                  aria-hidden="true"
-                >
-                  OK
-                </div>
-              </div>
+              <FounderBadge />
 
               <div>
                 <h3 className="text-xl font-semibold tracking-tight text-[#e8e8e8]">Omer Khan</h3>

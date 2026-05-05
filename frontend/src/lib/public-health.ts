@@ -11,7 +11,10 @@ export type PublicHealthStatus = {
 }
 
 const STORAGE_KEY = 'proxkey.publicHealth.v2'
-const DEFAULT_TTL_MS = 3 * 60 * 1000 // 3 minutes — same tab revisits don't re-fetch
+/** Short TTL so repeat visits in-session don’t burst the API; periodic refresh while /status is open uses a separate path. */
+export const PUBLIC_HEALTH_CACHE_TTL_MS = 3 * 60 * 1000
+/** How often we re-check API + database in the background while the status page stays open (no manual refresh). */
+export const PUBLIC_HEALTH_BACKGROUND_INTERVAL_MS = 10 * 60 * 1000
 
 type Stored = {
   payload: Record<string, unknown>
@@ -43,10 +46,11 @@ function parsePayload(json: Record<string, unknown>): PublicHealthStatus {
  * Does not attach auth headers or cookies — safe for a public status page.
  */
 export async function getPublicHealthStatus(options?: {
+  /** Skip cache and hit the network (used for background refresh and cold loads). Not exposed in the UI. */
   force?: boolean
   ttlMs?: number
 }): Promise<{ status: PublicHealthStatus; fromCache: boolean }> {
-  const ttlMs = options?.ttlMs ?? DEFAULT_TTL_MS
+  const ttlMs = options?.ttlMs ?? PUBLIC_HEALTH_CACHE_TTL_MS
   const force = Boolean(options?.force)
   const now = Date.now()
 
