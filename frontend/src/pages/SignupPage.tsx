@@ -234,6 +234,11 @@ export default function SignupPage() {
               <div className="mt-6">
                 <AuthMethodButtons
                   onGitHubClick={persistDraftForOAuth}
+                  onGitHubUnavailable={() =>
+                    setOauthNotice(
+                      'GitHub sign-in is not configured on this API (missing GITHUB_CLIENT_ID). Use email or set OAuth env on the server.',
+                    )
+                  }
                   onGoogleClick={() =>
                     setOauthNotice(
                       'Google sign-in requires OAuth credentials on the API. For now, use GitHub or email.',

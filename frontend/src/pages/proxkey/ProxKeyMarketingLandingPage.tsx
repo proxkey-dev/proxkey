@@ -1,6 +1,6 @@
 import { useEffect, useId, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { apiUrl } from '../../lib/api'
+import { apiUrl, getAuthCapabilities } from '../../lib/api'
 
 const BODY_SANS =
   '"IBM Plex Sans", system-ui, ui-sans-serif, -apple-system, BlinkMacSystemFont, sans-serif'
@@ -163,13 +163,20 @@ function highlightDollars(text: string, firstDollarMatch: RegExpMatchArray | nul
   )
 }
 
-function NavGitHubHref() {
-  return apiUrl('/api/auth/github')
-}
-
 export function ProxKeyMarketingLandingPage() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [githubOAuth, setGithubOAuth] = useState<boolean | null>(null)
   const mobileNavId = useId()
+
+  useEffect(() => {
+    let cancelled = false
+    getAuthCapabilities().then((c) => {
+      if (!cancelled) setGithubOAuth(c.githubOAuth)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     const prevTitle = document.title
@@ -349,13 +356,23 @@ export function ProxKeyMarketingLandingPage() {
             team, PR, workflow, and test suite.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <a
-              href={NavGitHubHref()}
-              className="inline-flex justify-center rounded-lg bg-[#4ade80] px-5 py-3 text-center font-semibold text-[#0a0a0a] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4ade80]"
-              style={{ fontFamily: MONO }}
-            >
-              Connect GitHub Actions
-            </a>
+            {githubOAuth === true ? (
+              <a
+                href={apiUrl('/api/auth/github')}
+                className="inline-flex justify-center rounded-lg bg-[#4ade80] px-5 py-3 text-center font-semibold text-[#0a0a0a] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4ade80]"
+                style={{ fontFamily: MONO }}
+              >
+                Connect GitHub Actions
+              </a>
+            ) : (
+              <Link
+                to="/signup"
+                className="inline-flex justify-center rounded-lg bg-[#4ade80] px-5 py-3 text-center font-semibold text-[#0a0a0a] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4ade80]"
+                style={{ fontFamily: MONO }}
+              >
+                Create account
+              </Link>
+            )}
             <a
               href="#how-it-works"
               className="inline-flex justify-center rounded-lg border border-[#1e1e1e] bg-transparent px-5 py-3 text-center font-medium text-[#e8e8e8] transition-colors hover:border-[#2e2e2e] hover:bg-[#111111] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4ade80]"
@@ -518,13 +535,23 @@ export function ProxKeyMarketingLandingPage() {
               Start in 2 minutes.
             </h2>
             <p className="mt-3 text-[#6b6b6b] md:text-[17px]">Free for up to 3 repos. No credit card required.</p>
-            <a
-              href={NavGitHubHref()}
-              className="mt-10 inline-flex justify-center rounded-lg bg-[#4ade80] px-6 py-3 font-semibold text-[#0a0a0a] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4ade80]"
-              style={{ fontFamily: MONO }}
-            >
-              Connect GitHub Actions
-            </a>
+            {githubOAuth === true ? (
+              <a
+                href={apiUrl('/api/auth/github')}
+                className="mt-10 inline-flex justify-center rounded-lg bg-[#4ade80] px-6 py-3 font-semibold text-[#0a0a0a] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4ade80]"
+                style={{ fontFamily: MONO }}
+              >
+                Connect GitHub Actions
+              </a>
+            ) : (
+              <Link
+                to="/signup"
+                className="mt-10 inline-flex justify-center rounded-lg bg-[#4ade80] px-6 py-3 font-semibold text-[#0a0a0a] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4ade80]"
+                style={{ fontFamily: MONO }}
+              >
+                Create account
+              </Link>
+            )}
             <p className="mt-6 text-xs text-[#6b6b6b] md:text-sm" style={{ fontFamily: MONO }}>
               Works with GitHub Actions today. CircleCI and Buildkite coming soon.
             </p>

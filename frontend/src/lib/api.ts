@@ -122,6 +122,22 @@ export async function getAuthMe(): Promise<AuthMeResponse> {
   return apiRequest<AuthMeResponse>('/api/auth/me')
 }
 
+export type AuthCapabilities = { githubOAuth: boolean }
+
+/** Used to avoid full-page navigation to `/api/auth/github` when it would return JSON (OAuth not configured). */
+export async function getAuthCapabilities(): Promise<AuthCapabilities> {
+  try {
+    const res = await fetch(apiUrl('/api/auth/capabilities'), { credentials: 'include' })
+    if (!res.ok) {
+      return { githubOAuth: false }
+    }
+    const data = (await res.json()) as { githubOAuth?: boolean }
+    return { githubOAuth: Boolean(data.githubOAuth) }
+  } catch {
+    return { githubOAuth: false }
+  }
+}
+
 export function postLogout(): Promise<{ ok: boolean }> {
   return apiRequest('/api/auth/logout', { method: 'POST' })
 }

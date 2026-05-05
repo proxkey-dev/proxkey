@@ -258,6 +258,11 @@ export async function registerDashboardApi(
     }
   })
 
+  /** Public: lets the SPA disable GitHub links when OAuth env is missing (avoids a JSON error page). */
+  app.get('/api/auth/capabilities', async (_request, _reply) => {
+    return { githubOAuth: Boolean(config.GITHUB_CLIENT_ID) }
+  })
+
   app.get('/api/auth/github', async (_request, reply) => {
     const clientId = config.GITHUB_CLIENT_ID
     const redirectBase = config.frontendOrigins[0] ?? config.APP_URL

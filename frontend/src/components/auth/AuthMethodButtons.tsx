@@ -1,4 +1,5 @@
-import { apiUrl } from '../../lib/api'
+import { useEffect, useState } from 'react'
+import { apiUrl, getAuthCapabilities } from '../../lib/api'
 
 type Style = 'dark' | 'light'
 
@@ -61,6 +62,8 @@ export type AuthMethodButtonsProps = {
   style?: Style
   /** Called immediately before navigating to GitHub (after draft is saved by parent). */
   onGitHubClick?: () => void
+  /** When API reports GitHub OAuth unavailable, user clicked the GitHub control (show inline help). */
+  onGitHubUnavailable?: () => void
   onGoogleClick?: () => void
   onAppleClick?: () => void
   onEmailClick: () => void
@@ -71,6 +74,7 @@ export type AuthMethodButtonsProps = {
 export function AuthMethodButtons({
   style = 'dark',
   onGitHubClick,
+  onGitHubUnavailable,
   onGoogleClick,
   onAppleClick,
   onEmailClick,
@@ -78,14 +82,30 @@ export function AuthMethodButtons({
   appleDisabled = true,
 }: AuthMethodButtonsProps) {
   const gh = apiUrl('/api/auth/github')
+  const [githubOAuth, setGithubOAuth] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    getAuthCapabilities().then((c) => {
+      if (!cancelled) setGithubOAuth(c.githubOAuth)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const isLight = style === 'light'
   const primaryBorder = isLight ? 'border-[#1e1e1e] bg-[#0a0a0a] text-[#e8e8e8] hover:bg-[#141414]' : 'border-[#2e2e2e] bg-[#161616] text-[#e8e8e8] hover:bg-[#1c1c1c]'
   const ghostBorder = isLight ? 'border-[#2e2e2e] bg-transparent text-[#e8e8e8] hover:bg-[#141414]' : 'border-[#2e2e2e] bg-[#111111] text-[#e8e8e8] hover:bg-[#161616]'
   const moreLabel =
     googleDisabled && appleDisabled ? 'More options (soon)' : 'Or continue with'
 
-  return (
-    <div className="flex flex-col gap-2">
+  const githubWorks = githubOAuth === true
+  /** Until we know GitHub OAuth works, avoid leading with a broken link — prefer email. */
+  const emailFirst = githubOAuth !== true
+
+  const githubControl =
+    githubWorks ? (
       <a
         href={gh}
         className={`${baseBtn} border ${primaryBorder}`}
@@ -94,15 +114,43 @@ export function AuthMethodButtons({
         {githubIcon()}
         Continue with GitHub
       </a>
-
+    ) : (
       <button
         type="button"
-        className={`${baseBtn} border ${ghostBorder}`}
-        onClick={onEmailClick}
+        disabled={githubOAuth === null}
+        className={`${baseBtn} border ${primaryBorder} disabled:cursor-wait`}
+        onClick={() => onGitHubUnavailable?.()}
+        title={githubOAuth === false ? 'GitHub sign-in is not configured on this server. Use email.' : undefined}
       >
-        {mailIcon()}
-        Continue with email
+        {githubIcon()}
+        Continue with GitHub
       </button>
+    )
+
+  const emailControl = (
+    <button
+      type="button"
+      className={`${baseBtn} border ${ghostBorder}`}
+      onClick={onEmailClick}
+    >
+      {mailIcon()}
+      Continue with email
+    </button>
+  )
+
+  return (
+    <div className="flex flex-col gap-2">
+      {emailFirst ? (
+        <>
+          {emailControl}
+          {githubControl}
+        </>
+      ) : (
+        <>
+          {githubControl}
+          {emailControl}
+        </>
+      )}
 
       <div className="relative py-2">
         <div className="absolute inset-0 flex items-center" aria-hidden>
