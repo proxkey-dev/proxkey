@@ -15,6 +15,7 @@ import AboutPage from './pages/proxkey/AboutPage'
 import PublicDocsPage from './pages/PublicDocsPage'
 import RootRedirectPage from './pages/RootRedirectPage'
 import SettingsPage from './pages/SettingsPage'
+import StatusPage from './pages/StatusPage'
 import WastePage from './pages/WastePage'
 import './index.css'
 
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/callback" element={<CallbackPage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/status" element={<StatusPage />} />
         <Route path="/docs" element={<PublicDocsPage />} />
         <Route path="/github/callback" element={<GitHubCallbackPage />} />
         <Route path="/github/setup" element={<GitHubSetupPage />} />

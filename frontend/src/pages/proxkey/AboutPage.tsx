@@ -115,8 +115,8 @@ export function AboutPage() {
                   What we build
                 </h2>
                 <p className="mt-6 text-base leading-relaxed text-[#e8e8e8] md:text-lg">
-                  ProxKey connects to GitHub Actions and attributes CI spend to the exact repo,
-                  team, PR, and test suite that caused it.
+                  ProxKey connects to GitHub Actions today — with CircleCI and Buildkite on the roadmap
+                  — and attributes CI spend to the exact repo, team, PR, and test suite that caused it.
                 </p>
                 <p className="mt-4 text-base leading-relaxed text-[#6b6b6b] md:text-lg">
                   It helps engineering organizations see where CI money is going, identify waste,
@@ -128,7 +128,7 @@ export function AboutPage() {
               <div className="space-y-6">
                 {[
                   { label: 'Launch', value: '2026' },
-                  { label: 'Integrations', value: 'GitHub Actions' },
+                  { label: 'Integrations', value: 'GitHub Actions · CircleCI & Buildkite (soon)' },
                   { label: 'Pricing', value: 'Free · 3 repos' },
                 ].map((item) => (
                   <div key={item.label} className="border-t border-[#1e1e1e] pt-6">
@@ -245,14 +245,9 @@ export function AboutPage() {
               hello@proxkey.dev
             </a>
             <span aria-hidden="true">|</span>
-            <a
-              href={apiUrl('/health')}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-[#e8e8e8]"
-            >
+            <Link to="/status" className="hover:text-[#e8e8e8]">
               Status
-            </a>
+            </Link>
             <span aria-hidden="true">|</span>
             <Link to="/about" className="hover:text-[#e8e8e8]">
               About

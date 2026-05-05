@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { apiUrl } from '../lib/api'
 
 export default function PublicDocsPage() {
   return (
@@ -39,14 +38,9 @@ export default function PublicDocsPage() {
             <span aria-hidden="true" className="hidden text-[#2a2a2a] sm:inline">
               |
             </span>
-            <a
-              href={apiUrl('/health')}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors hover:text-[#e8e8e8]"
-            >
+            <Link to="/status" className="transition-colors hover:text-[#e8e8e8]">
               Status
-            </a>
+            </Link>
             <span aria-hidden="true" className="hidden text-[#2a2a2a] sm:inline">
               |
             </span>
