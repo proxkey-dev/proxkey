@@ -1,0 +1,6 @@
+name = "proxkey-site"
+main = "workers/demo-echo/worker.ts"
+compatibility_date = "2024-10-01"
+
+# optional: add a route if you're binding to your domain
+# routes = [{ pattern = "proxkey.dev/demo/*", zone_name = "proxkey.dev" }]

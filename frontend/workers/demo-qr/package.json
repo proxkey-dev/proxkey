@@ -1,0 +1,15 @@
+{
+  "name": "proxkey-demo-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker for ProxKey demo QR redirects",
+  "main": "src/worker.ts",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "test": "node test-worker.js"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0",
+    "@cloudflare/workers-types": "^4.0.0"
+  }
+}

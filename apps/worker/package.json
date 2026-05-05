@@ -1,0 +1,33 @@
+{
+  "name": "@proxkey/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/worker.ts",
+    "build": "tsc",
+    "start": "node dist/worker.js",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@octokit/auth-app": "^7.1.5",
+    "@octokit/rest": "^21.1.1",
+    "@proxkey/config": "workspace:*",
+    "@proxkey/db": "workspace:*",
+    "@proxkey/types": "workspace:*",
+    "bullmq": "^5.34.3",
+    "ioredis": "^5.4.2",
+    "resend": "^4.0.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.12",
+    "eslint": "^9.17.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.19.1",
+    "vitest": "^2.1.8"
+  }
+}

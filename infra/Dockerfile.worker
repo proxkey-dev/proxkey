@@ -1,0 +1,23 @@
+FROM node:20-alpine AS builder
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/config/package.json packages/config/
+COPY packages/db/package.json packages/db/
+COPY packages/types/package.json packages/types/
+COPY apps/worker/package.json apps/worker/
+RUN pnpm install --frozen-lockfile
+COPY packages ./packages
+COPY apps/worker ./apps/worker
+COPY tsconfig.json ./
+RUN pnpm run build:packages && pnpm --filter @proxkey/worker build
+RUN pnpm prune --prod
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+RUN addgroup -g 1001 proxkey && adduser -D -u 1001 -G proxkey proxkey
+ENV NODE_ENV=production
+COPY --from=builder /app /app
+USER proxkey
+WORKDIR /app/apps/worker
+CMD ["node", "dist/worker.js"]

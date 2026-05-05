@@ -1,0 +1,11 @@
+node_modules
+server/node_modules
+dist
+server/dist
+coverage
+.wrangler
+.DS_Store
+package-lock.json
+server/package-lock.json
+public
+docs/archive

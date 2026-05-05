@@ -1,0 +1,90 @@
+services:
+  api:
+    build:
+      context: ./frontend/server
+      target: runner
+    image: proxkey-api:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://proxkey:proxkey@postgres:5432/proxkey
+      REDIS_URL: redis://redis:6379
+      REDIS_ENABLED: "true"
+      USE_INLINE_QUEUE: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    networks:
+      - proxkey-internal
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    image: proxkey-api:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    command: ["node", "dist/proxkey/worker.js"]
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: worker
+      DATABASE_URL: postgresql://proxkey:proxkey@postgres:5432/proxkey
+      REDIS_URL: redis://redis:6379
+      REDIS_ENABLED: "true"
+      USE_INLINE_QUEUE: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - proxkey-internal
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: proxkey
+      POSTGRES_USER: proxkey
+      POSTGRES_PASSWORD: proxkey
+    volumes:
+      - proxkey-postgres:/var/lib/postgresql/data
+    networks:
+      - proxkey-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U proxkey -d proxkey"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - proxkey-redis:/data
+    networks:
+      - proxkey-internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  proxkey-internal:
+    driver: bridge
+
+volumes:
+  proxkey-postgres:
+  proxkey-redis:

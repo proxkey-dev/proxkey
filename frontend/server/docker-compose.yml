@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: proxkey-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: proxkey
+      POSTGRES_USER: proxkey
+      POSTGRES_PASSWORD: proxkey
+    ports:
+      - "5433:5432"
+    volumes:
+      - proxkey-postgres-data:/var/lib/postgresql/data
+      - ./prisma/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U proxkey -d proxkey"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  proxkey-postgres-data:

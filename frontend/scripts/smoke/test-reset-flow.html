@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Password Reset Flow - ProxKey</title>
+    <style>
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 50%, #2A2A2A 100%);
+            color: #EAEAEA;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            backdrop-filter: blur(24px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            padding: 40px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 20px;
+            backdrop-filter: blur(12px);
+            margin-bottom: 20px;
+        }
+        
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #4A90E2, #7ED321);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .logo-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FFFFFF;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .test-title {
+            color: #4A90E2;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #4A90E2, #7ED321);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.2s ease;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+        }
+        
+        .test-result {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .success {
+            border-left: 4px solid #7ED321;
+        }
+        
+        .error {
+            border-left: 4px solid #D0021B;
+        }
+        
+        .info {
+            border-left: 4px solid #4A90E2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">PK</div>
+                <div class="logo-text">ProxKey</div>
+            </div>
+            <h1>Password Reset Flow Test</h1>
+            <p>Test the password reset functionality with different URL formats</p>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">Test 1: Recovery URL Format</div>
+            <p>Test the bounce link format: <code>/auth/reset?recovery_url=...</code></p>
+            <button class="test-button" onclick="testRecoveryUrl()">Test Recovery URL</button>
+            <div id="recovery-result" class="test-result hidden"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">Test 2: Access Token Format</div>
+            <p>Test the direct redirect format: <code>/auth/reset#access_token=...</code></p>
+            <button class="test-button" onclick="testAccessToken()">Test Access Token</button>
+            <div id="token-result" class="test-result hidden"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">Test 3: Invalid Link</div>
+            <p>Test error handling with invalid parameters</p>
+            <button class="test-button" onclick="testInvalidLink()">Test Invalid Link</button>
+            <div id="invalid-result" class="test-result hidden"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">Test 4: Direct Page Access</div>
+            <p>Test accessing the reset page directly without parameters</p>
+            <button class="test-button" onclick="testDirectAccess()">Test Direct Access</button>
+            <div id="direct-result" class="test-result hidden"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">Live Test Links</div>
+            <p>Click these links to test the actual reset page:</p>
+            <a href="/auth/reset?recovery_url=https://example.com/reset?token_hash=test123&type=recovery" class="test-button" target="_blank">Test Recovery URL (New Tab)</a>
+            <a href="/auth/reset#access_token=test123&refresh_token=test456" class="test-button" target="_blank">Test Access Token (New Tab)</a>
+            <a href="/auth/reset" class="test-button" target="_blank">Test Direct Access (New Tab)</a>
+        </div>
+    </div>
+
+    <script>
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `test-result ${type}`;
+            element.classList.remove('hidden');
+        }
+        
+        function testRecoveryUrl() {
+            showResult('recovery-result', 'Testing recovery URL format...', 'info');
+            
+            // Simulate the recovery URL format
+            const testUrl = new URL('/auth/reset', window.location.origin);
+            testUrl.searchParams.set('recovery_url', 'https://example.com/reset?token_hash=test123&type=recovery');
+            
+            showResult('recovery-result', 
+                `✅ Recovery URL format test:\n` +
+                `URL: ${testUrl.toString()}\n` +
+                `Expected behavior: Page should verify the token and show password form\n` +
+                `Status: Ready for testing\n\n` +
+                `Click the "Test Recovery URL (New Tab)" button to test live.`, 
+                'success'
+            );
+        }
+        
+        function testAccessToken() {
+            showResult('token-result', 'Testing access token format...', 'info');
+            
+            // Simulate the access token format
+            const testUrl = new URL('/auth/reset', window.location.origin);
+            testUrl.hash = 'access_token=test123&refresh_token=test456';
+            
+            showResult('token-result', 
+                `✅ Access token format test:\n` +
+                `URL: ${testUrl.toString()}\n` +
+                `Expected behavior: Page should set session and show password form\n` +
+                `Status: Ready for testing\n\n` +
+                `Click the "Test Access Token (New Tab)" button to test live.`, 
+                'success'
+            );
+        }
+        
+        function testInvalidLink() {
+            showResult('invalid-result', 'Testing invalid link handling...', 'info');
+            
+            showResult('invalid-result', 
+                `✅ Invalid link test:\n` +
+                `Expected behavior: Page should show error message\n` +
+                `Error message: "Invalid or expired reset link. Please request a new password reset."\n` +
+                `Status: Ready for testing\n\n` +
+                `This tests the error handling when no valid parameters are provided.`, 
+                'success'
+            );
+        }
+        
+        function testDirectAccess() {
+            showResult('direct-result', 'Testing direct page access...', 'info');
+            
+            showResult('direct-result', 
+                `✅ Direct access test:\n` +
+                `URL: /auth/reset\n` +
+                `Expected behavior: Page should show error message (no valid reset link)\n` +
+                `Status: Ready for testing\n\n` +
+                `Click the "Test Direct Access (New Tab)" button to test live.`, 
+                'success'
+            );
+        }
+        
+        // Show initial instructions
+        document.addEventListener('DOMContentLoaded', function() {
+            showResult('recovery-result', 'Click "Test Recovery URL" to see test details', 'info');
+            showResult('token-result', 'Click "Test Access Token" to see test details', 'info');
+            showResult('invalid-result', 'Click "Test Invalid Link" to see test details', 'info');
+            showResult('direct-result', 'Click "Test Direct Access" to see test details', 'info');
+        });
+    </script>
+</body>
+</html>

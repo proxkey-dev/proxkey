@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Provider {
+  GITHUB_ACTIONS
+  CIRCLECI
+  BUILDKITE
+}
+
+enum BuildConclusion {
+  SUCCESS
+  FAILURE
+  CANCELLED
+  TIMED_OUT
+  FLAKY
+}
+
+enum WasteFlagType {
+  DOCS_ONLY_TRIGGER
+  ALWAYS_FLAKY_TEST
+  OVERSIZED_RUNNER
+  REDUNDANT_MATRIX
+  CACHE_MISS_CHURN
+  SERIAL_PARALLELIZABLE
+}
+
+enum Plan {
+  FREE
+  TEAM
+  ENTERPRISE
+}
+
+model Org {
+  id                    String    @id @default(cuid())
+  githubInstallationId  String?   @unique
+  githubLogin           String    @unique
+  name                  String
+  plan                  Plan      @default(FREE)
+  monthlyBudgetCents    Int?
+  slackWebhookUrl       String?
+  digestEnabled         Boolean   @default(true)
+  digestCronTimezone    String    @default("UTC")
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+  repos                 Repo[]
+  members               OrgMember[]
+  wasteFlags            WasteFlag[]
+}
+
+model OrgMember {
+  id          String   @id @default(cuid())
+  orgId       String
+  org         Org      @relation(fields: [orgId], references: [id])
+  githubLogin String
+  role        String   @default("member")
+  createdAt   DateTime @default(now())
+
+  @@unique([orgId, githubLogin])
+}
+
+model Repo {
+  id            String    @id @default(cuid())
+  orgId         String
+  org           Org       @relation(fields: [orgId], references: [id])
+  provider      Provider
+  externalId    String
+  name          String
+  fullName      String
+  defaultBranch String    @default("main")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+  builds        Build[]
+
+  @@unique([provider, externalId])
+  @@index([orgId])
+}
+
+model Build {
+  id              String           @id @default(cuid())
+  repoId          String
+  repo            Repo             @relation(fields: [repoId], references: [id])
+  provider        Provider
+  externalId      String
+  branch          String
+  prNumber        Int?
+  prTitle         String?
+  triggeredBy     String?
+  status          String
+  conclusion      BuildConclusion?
+  startedAt       DateTime
+  finishedAt      DateTime?
+  durationSeconds Int?
+  costCents       Int              @default(0)
+  runnerType      String?
+  runnerSize      String?
+  commitSha       String?
+  rawPayload      Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  jobs            WorkflowJob[]
+  testResults     TestResult[]
+  wasteFlags      WasteFlag[]
+
+  @@unique([provider, externalId])
+  @@index([repoId, startedAt])
+  @@index([triggeredBy])
+  @@index([prNumber, repoId])
+}
+
+model WorkflowJob {
+  id              String    @id @default(cuid())
+  buildId         String
+  build           Build     @relation(fields: [buildId], references: [id])
+  externalId      String
+  name            String
+  startedAt       DateTime
+  finishedAt      DateTime?
+  durationSeconds Int?
+  costCents       Int       @default(0)
+  runnerType      String?
+  runnerSize      String?
+  conclusion      String?
+  createdAt       DateTime  @default(now())
+
+  @@unique([buildId, externalId])
+  @@index([buildId])
+}
+
+model TestResult {
+  id            String   @id @default(cuid())
+  buildId       String
+  build         Build    @relation(fields: [buildId], references: [id])
+  suite         String
+  name          String
+  status        String
+  durationMs    Int?
+  flakyCount30d Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  @@index([buildId])
+  @@index([suite, name])
+}
+
+model WasteFlag {
+  id                   String        @id @default(cuid())
+  orgId                String
+  org                  Org           @relation(fields: [orgId], references: [id])
+  buildId              String?
+  build                Build?        @relation(fields: [buildId], references: [id])
+  flagType             WasteFlagType
+  savingsEstimateCents Int           @default(0)
+  details              Json?
+  resolvedAt           DateTime?
+  createdAt            DateTime      @default(now())
+
+  @@index([orgId, flagType])
+  @@index([buildId])
+}
+
+model DigestLog {
+  id      String   @id @default(cuid())
+  orgId   String
+  sentAt  DateTime @default(now())
+  channel String
+  payload Json
+}

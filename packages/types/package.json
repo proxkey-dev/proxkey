@@ -1,0 +1,32 @@
+{
+  "name": "@proxkey/types",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@proxkey/db": "workspace:*",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@proxkey/config": "workspace:*",
+    "@types/node": "^20.17.12",
+    "eslint": "^9.17.0",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.19.1",
+    "vitest": "^2.1.8"
+  }
+}

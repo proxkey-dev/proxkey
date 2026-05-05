@@ -1,0 +1,15 @@
+node_modules/
+.railway/
+.next/
+dist/
+.venv/
+server/dist/
+.wrangler/
+.DS_Store
+tsconfig.tsbuildinfo
+.DS_Store
+.env
+.env.*
+!.env.example
+!.env.production
+!server/.env.example

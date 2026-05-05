@@ -1,0 +1,12 @@
+{
+  "extends": "@proxkey/config/tsconfig/node.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": ["src/**/*.ts"],
+  "references": [{ "path": "../db" }]
+}

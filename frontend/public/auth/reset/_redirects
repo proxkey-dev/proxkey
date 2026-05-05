@@ -1,0 +1,3 @@
+# Redirects for password reset page
+/auth/reset-password.html /auth/reset/index.html 301
+/auth/reset-password /auth/reset/index.html 301

@@ -1,0 +1,31 @@
+<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Keyhole shape -->
+  <path
+    d="M16 4C20.4183 4 24 7.58172 24 12C24 14.5 22.5 16.5 20.5 17.5L20.5 20C20.5 22.2091 18.7091 24 16.5 24H15.5C13.2909 24 11.5 22.2091 11.5 20L11.5 17.5C9.5 16.5 8 14.5 8 12C8 7.58172 11.5817 4 16 4Z"
+    fill="url(#glassGradient)"
+    stroke="#4A90E2"
+    stroke-width="1"
+  />
+  <!-- Hourglass lines -->
+  <path
+    d="M12 12L16 16L20 12"
+    stroke="#4A90E2"
+    stroke-width="1"
+    fill="none"
+  />
+  <path
+    d="M12 20L16 16L20 20"
+    stroke="#4A90E2"
+    stroke-width="1"
+    fill="none"
+  />
+  
+  <!-- Glass gradient definition -->
+  <defs>
+    <linearGradient id="glassGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4A90E2" />
+      <stop offset="50%" stop-color="#7ED321" />
+      <stop offset="100%" stop-color="#F5A623" />
+    </linearGradient>
+  </defs>
+</svg>

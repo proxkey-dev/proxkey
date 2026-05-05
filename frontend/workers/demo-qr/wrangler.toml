@@ -1,0 +1,8 @@
+name = "proxkey-demo"
+main = "src/worker.ts"
+compatibility_date = "2024-11-11"
+
+routes = [
+  # Adjust to your custom domain if you have one
+  { pattern = "proxkey-demo.workers.dev/demo/echo*", zone_name = "" }
+]

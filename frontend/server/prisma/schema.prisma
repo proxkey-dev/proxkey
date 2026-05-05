@@ -1,0 +1,648 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  TRIAGE_LEAD
+  EMPLOYEE
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  DISABLED
+}
+
+enum ReportSource {
+  CLI
+  API
+  CI
+  MANUAL
+  SUPPORT
+  SLACK
+  QA
+  INCIDENT
+  LOG
+  WEBHOOK
+  EMAIL
+  GITHUB
+  GITHUB_ACTIONS
+  LINEAR
+  JIRA
+  SENTRY
+  DATADOG
+  PAGERDUTY
+}
+
+enum ReportStatus {
+  PROCESSING
+  TRIAGED
+  NEEDS_REVIEW
+  ASSIGNED
+  RESOLVED
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TriageArtifactType {
+  LOG
+  STACKTRACE
+  DIFF
+  METADATA
+  SCREENSHOT
+}
+
+enum PlanTier {
+  FREE
+  FOUNDER
+  TEAM
+  GROWTH
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  FREE
+  ACTIVE
+  TRIAL
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
+enum IntegrationProvider {
+  GITHUB
+  JIRA
+  LINEAR
+  SLACK
+  SENTRY
+  DATADOG
+  PAGERDUTY
+  SPLUNK
+  EMAIL
+  WEBHOOK
+}
+
+enum IntegrationCategory {
+  ENGINEERING_SYSTEMS
+  SIGNALS
+  COMMUNICATION
+}
+
+enum IntegrationConnectionStatus {
+  CONNECTED
+  NEEDS_CONFIGURATION
+  DISCONNECTED
+}
+
+enum PacketClusterStatus {
+  OPEN
+  MONITORING
+  RESOLVED
+}
+
+enum PacketExportTarget {
+  MARKDOWN
+  JSON
+  GITHUB
+  JIRA
+  LINEAR
+  SLACK
+  INCIDENT
+  WEBHOOK
+}
+
+enum PacketExportStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+enum PacketFeedbackVerdict {
+  ACCEPTED
+  REJECTED
+  OVERRIDDEN
+}
+
+enum OrganizationMembershipRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum CiProvider {
+  GITHUB_ACTIONS @map("github_actions")
+  CIRCLECI       @map("circleci")
+  BUILDKITE      @map("buildkite")
+
+  @@map("ci_provider")
+}
+
+enum BuildConclusion {
+  SUCCESS   @map("success")
+  FAILURE   @map("failure")
+  CANCELLED @map("cancelled")
+  FLAKY     @map("flaky")
+
+  @@map("build_conclusion")
+}
+
+enum TestResultStatus {
+  PASS    @map("pass")
+  FAIL    @map("fail")
+  FLAKY   @map("flaky")
+  SKIPPED @map("skipped")
+
+  @@map("test_result_status")
+}
+
+enum WasteFlagType {
+  DOCS_ONLY_TRIGGER @map("docs_only_trigger")
+  ALWAYS_FLAKY_TEST @map("always_flaky_test")
+  OVERSIZED_RUNNER  @map("oversized_runner")
+  REDUNDANT_MATRIX  @map("redundant_matrix")
+  CACHE_MISS_CHURN  @map("cache_miss_churn")
+
+  @@map("waste_flag_type")
+}
+
+enum WasteFlagStatus {
+  ACTIVE    @map("active")
+  RESOLVED  @map("resolved")
+  DISMISSED @map("dismissed")
+
+  @@map("waste_flag_status")
+}
+
+model Organization {
+  id                     String                   @id @default(uuid()) @db.Uuid
+  name                   String
+  domain                 String?                  @unique
+  slug                   String?                  @unique
+  auth0OrgId             String?                  @unique
+  githubInstallationId   String?                  @unique
+  githubLogin            String?                  @map("github_login")
+  createdByUserId        String?                  @db.Uuid
+  plan                   PlanTier                 @default(FREE)
+  monthlySpendCents      Int                      @default(0)
+  monthlyBudgetCents     Int?                     @map("monthly_budget_cents")
+  timezone               String                   @default("UTC")
+  slackWebhookUrl        String?
+  emailDigestEnabled     Boolean                  @default(true)
+  emailDigestSchedule    String                   @default("Monday 09:00")
+  subscriptionStatus     SubscriptionStatus       @default(FREE)
+  stripeCustomerId       String?
+  stripeSubscriptionId   String?
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  users                  User[]
+  projects               Project[]
+  reports                Report[]
+  auditLogs              AuditLog[]
+  apiKeys                ApiKey[]
+  memberships            OrganizationMembership[]
+  integrationConnections IntegrationConnection[]
+  packetClusters         PacketCluster[]
+  packetExports          PacketExport[]
+  packetFeedback         PacketFeedback[]
+  repos                  Repo[]
+  ciBuilds               Build[]
+  wasteFlags             WasteFlag[]
+  digestLogs             DigestLog[]
+}
+
+model DigestLog {
+  id                  String       @id @default(uuid()) @db.Uuid
+  orgId               String       @map("org_id") @db.Uuid
+  periodStart         DateTime     @map("period_start")
+  periodEnd           DateTime     @map("period_end")
+  totalSpendCents     Int          @default(0) @map("total_spend_cents")
+  wowDeltaPercent     Float        @default(0) @map("wow_delta_percent")
+  topReposJson        Json         @default("[]") @map("top_repos_json")
+  topWasteFlagsJson   Json         @default("[]") @map("top_waste_flags_json")
+  emailSent           Boolean      @default(false) @map("email_sent")
+  slackSent           Boolean      @default(false) @map("slack_sent")
+  emailMessageId      String?      @map("email_message_id")
+  slackResponseStatus Int?         @map("slack_response_status")
+  errorMessage        String?      @map("error_message")
+  createdAt           DateTime     @default(now()) @map("created_at")
+  organization        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, createdAt])
+  @@map("digest_logs")
+}
+
+model User {
+  id                            String                   @id @default(uuid()) @db.Uuid
+  orgId                         String                   @db.Uuid
+  auth0UserId                   String?                  @unique
+  name                          String
+  email                         String                   @unique
+  passwordHash                  String?
+  role                          UserRole
+  status                        UserStatus               @default(INVITED)
+  createdAt                     DateTime                 @default(now())
+  updatedAt                     DateTime                 @updatedAt
+  lastActive                    DateTime?
+  organization                  Organization             @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  sessions                      Session[]
+  ownedResults                  TriageResult[]           @relation("SuggestedOwner")
+  auditLogs                     AuditLog[]
+  createdApiKeys                ApiKey[]                 @relation("CreatedApiKeys")
+  memberships                   OrganizationMembership[]
+  createdIntegrationConnections IntegrationConnection[]  @relation("CreatedIntegrationConnections")
+  createdPacketExports          PacketExport[]           @relation("CreatedPacketExports")
+  packetFeedback                PacketFeedback[]          @relation("CreatedPacketFeedback")
+
+  @@index([orgId, role])
+  @@index([orgId, status])
+}
+
+model OrganizationMembership {
+  id             String                     @id @default(uuid()) @db.Uuid
+  organizationId String                     @db.Uuid
+  userId         String                     @db.Uuid
+  role           OrganizationMembershipRole
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+  organization   Organization               @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId, organizationId])
+}
+
+model Project {
+  id           String       @id @default(uuid()) @db.Uuid
+  orgId        String       @db.Uuid
+  name         String
+  repoUrl      String?
+  createdAt    DateTime     @default(now())
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  reports      Report[]
+
+  @@unique([orgId, name])
+  @@index([orgId, createdAt])
+}
+
+model Repo {
+  id            String     @id @default(uuid()) @db.Uuid
+  orgId         String     @map("org_id") @db.Uuid
+  name          String
+  provider      CiProvider
+  externalId    String     @map("external_id")
+  defaultBranch String     @map("default_branch")
+  deletedAt     DateTime?  @map("deleted_at")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  builds        Build[]
+  wasteFlags    WasteFlag[]
+
+  @@unique([provider, externalId])
+  @@index([orgId, provider])
+  @@map("repos")
+}
+
+model Build {
+  id              String           @id @default(uuid()) @db.Uuid
+  provider        CiProvider
+  externalId      String           @map("external_id")
+  orgId           String           @map("org_id") @db.Uuid
+  repoId          String           @map("repo_id") @db.Uuid
+  branch          String
+  prNumber        Int?             @map("pr_number")
+  triggeredBy     String?          @map("triggered_by")
+  team            String?
+  status          String
+  startedAt       DateTime         @map("started_at")
+  finishedAt      DateTime?        @map("finished_at")
+  durationSeconds Int?             @map("duration_seconds")
+  costCents       Int              @default(0) @map("cost_cents")
+  runnerType      String?          @map("runner_type")
+  runnerSize      String?          @map("runner_size")
+  conclusion      BuildConclusion?
+  changedFiles    Json             @default("[]") @map("changed_files")
+  deletedAt       DateTime?        @map("deleted_at")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  organization    Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  repo            Repo             @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  workflowJobs    WorkflowJob[]
+  testResults     TestResult[]
+  wasteFlags      WasteFlag[]
+
+  @@unique([provider, externalId])
+  @@index([repoId, startedAt])
+  @@index([orgId, startedAt])
+  @@index([prNumber, repoId])
+  @@map("builds")
+}
+
+model WorkflowJob {
+  id              String           @id @default(uuid()) @db.Uuid
+  buildId         String           @map("build_id") @db.Uuid
+  externalId      String?          @map("external_id")
+  name            String
+  startedAt       DateTime?        @map("started_at")
+  finishedAt      DateTime?        @map("finished_at")
+  durationSeconds Int?             @map("duration_seconds")
+  costCents       Int              @default(0) @map("cost_cents")
+  runnerType      String?          @map("runner_type")
+  runnerSize      String?          @map("runner_size")
+  conclusion      BuildConclusion?
+  deletedAt       DateTime?        @map("deleted_at")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  build           Build            @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  @@unique([buildId, externalId])
+  @@index([buildId, startedAt])
+  @@map("workflow_jobs")
+}
+
+model TestResult {
+  id             String           @id @default(uuid()) @db.Uuid
+  buildId        String           @map("build_id") @db.Uuid
+  suite          String
+  name           String
+  status         TestResultStatus
+  durationMs     Int              @map("duration_ms")
+  flakyCount30d  Int              @default(0) @map("flaky_count_30d")
+  deletedAt      DateTime?        @map("deleted_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  build          Build            @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  @@index([buildId, suite])
+  @@index([name, suite])
+  @@map("test_results")
+}
+
+model WasteFlag {
+  id             String          @id @default(uuid()) @db.Uuid
+  orgId          String          @map("org_id") @db.Uuid
+  repoId         String          @map("repo_id") @db.Uuid
+  buildId        String?         @map("build_id") @db.Uuid
+  type           WasteFlagType
+  status         WasteFlagStatus @default(ACTIVE)
+  savingsCents   Int             @default(0) @map("savings_cents")
+  firstSeenAt    DateTime        @default(now()) @map("first_seen_at")
+  lastSeenAt     DateTime        @default(now()) @map("last_seen_at")
+  recommendation String
+  evidenceJson   Json            @default("{}") @map("evidence_json")
+  deletedAt      DateTime?       @map("deleted_at")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  organization   Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  repo           Repo            @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  build          Build?          @relation(fields: [buildId], references: [id], onDelete: SetNull)
+
+  @@unique([repoId, buildId, type])
+  @@index([orgId, type, status])
+  @@index([repoId, firstSeenAt])
+  @@map("waste_flags")
+}
+
+model Report {
+  id              String           @id @default(uuid()) @db.Uuid
+  orgId           String           @db.Uuid
+  projectId       String?          @db.Uuid
+  clusterId       String?          @db.Uuid
+  source          ReportSource
+  title           String
+  rawText         String
+  logs            String?
+  metadataJson    Json             @default("{}")
+  status          ReportStatus     @default(PROCESSING)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  organization    Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  project         Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  cluster         PacketCluster?   @relation(fields: [clusterId], references: [id], onDelete: SetNull)
+  triageResult    TriageResult?
+  triageSteps     TriageStep[]
+  triageArtifacts TriageArtifact[]
+  packetExports   PacketExport[]
+  packetFeedback  PacketFeedback[]
+
+  @@index([orgId, status])
+  @@index([orgId, clusterId])
+  @@index([projectId])
+  @@index([createdAt])
+}
+
+model TriageResult {
+  id                  String  @id @default(uuid()) @db.Uuid
+  reportId            String  @unique @db.Uuid
+  summary             String
+  classification      String  @default("Bug")
+  severity            Severity
+  severityLabel       String?
+  component           String
+  suspectedRootCause  String?
+  clusterId           String? @db.Uuid
+  suggestedOwnerId    String? @db.Uuid
+  confidence          Float
+  needsReview         Boolean @default(false)
+  requestMoreInfo     Boolean @default(false)
+  evidence            Json    @default("[]")
+  extractedSignals    Json    @default("[]")
+  reproSteps          Json    @default("[]")
+  missingInfo         Json    @default("[]")
+  uncertainty         Json    @default("[]")
+  duplicateCandidates Json    @default("[]")
+  recommendedActions  Json    @default("[]")
+  nextAction          String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  report              Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  suggestedOwner      User?    @relation("SuggestedOwner", fields: [suggestedOwnerId], references: [id], onDelete: SetNull)
+
+  @@index([severity])
+  @@index([clusterId])
+  @@index([suggestedOwnerId])
+  @@index([confidence])
+}
+
+model PacketCluster {
+  id           String              @id @default(uuid()) @db.Uuid
+  orgId        String              @db.Uuid
+  key          String
+  title        String
+  component    String?
+  severity     Severity?
+  status       PacketClusterStatus @default(OPEN)
+  packetCount  Int                 @default(0)
+  firstSeenAt  DateTime            @default(now())
+  lastSeenAt   DateTime            @default(now())
+  metadataJson Json                @default("{}")
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  organization Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  reports      Report[]
+
+  @@unique([orgId, key])
+  @@index([orgId, status, lastSeenAt])
+  @@index([orgId, component])
+}
+
+model PacketExport {
+  id              String             @id @default(uuid()) @db.Uuid
+  orgId           String             @db.Uuid
+  reportId        String             @db.Uuid
+  target          PacketExportTarget
+  status          PacketExportStatus @default(PENDING)
+  payloadJson     Json
+  responseJson    Json?
+  error           String?
+  createdByUserId String?            @db.Uuid
+  createdAt       DateTime           @default(now())
+  organization    Organization       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  report          Report             @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  createdByUser   User?              @relation("CreatedPacketExports", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, createdAt])
+  @@index([reportId, createdAt])
+  @@index([target, status])
+}
+
+model PacketFeedback {
+  id              String                @id @default(uuid()) @db.Uuid
+  orgId           String                @db.Uuid
+  reportId        String                @db.Uuid
+  field           String
+  originalValue   Json?
+  acceptedValue   Json?
+  verdict         PacketFeedbackVerdict
+  note            String?
+  createdByUserId String?               @db.Uuid
+  createdAt       DateTime              @default(now())
+  organization    Organization          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  report          Report                @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  createdByUser   User?                 @relation("CreatedPacketFeedback", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, field, createdAt])
+  @@index([reportId, createdAt])
+  @@index([createdByUserId])
+}
+
+model TriageStep {
+  id         String   @id @default(uuid()) @db.Uuid
+  reportId   String   @db.Uuid
+  stepName   String
+  input      Json?
+  output     Json?
+  durationMs Int
+  createdAt  DateTime @default(now())
+  report     Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId, createdAt])
+}
+
+model TriageArtifact {
+  id        String             @id @default(uuid()) @db.Uuid
+  reportId  String             @db.Uuid
+  type      TriageArtifactType
+  content   String
+  createdAt DateTime           @default(now())
+  report    Report             @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId, type])
+}
+
+model AuditLog {
+  id           String       @id @default(uuid()) @db.Uuid
+  orgId        String       @db.Uuid
+  userId       String?      @db.Uuid
+  action       String
+  entityType   String
+  entityId     String?
+  metadataJson Json         @default("{}")
+  createdAt    DateTime     @default(now())
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model ApiKey {
+  id              String       @id @default(uuid()) @db.Uuid
+  orgId           String       @db.Uuid
+  name            String
+  keyPrefix       String
+  keyHash         String       @unique
+  scopesJson      Json         @default("[]")
+  lastUsedAt      DateTime?
+  expiresAt       DateTime?
+  revokedAt       DateTime?
+  createdByUserId String       @db.Uuid
+  createdAt       DateTime     @default(now())
+  organization    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  createdByUser   User         @relation("CreatedApiKeys", fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, revokedAt])
+  @@index([createdByUserId])
+}
+
+model IntegrationConnection {
+  id              String                      @id @default(uuid()) @db.Uuid
+  orgId           String                      @db.Uuid
+  provider        IntegrationProvider
+  category        IntegrationCategory
+  status          IntegrationConnectionStatus @default(NEEDS_CONFIGURATION)
+  displayName     String
+  configJson      Json                        @default("{}")
+  createdByUserId String?                     @db.Uuid
+  connectedAt     DateTime?
+  disconnectedAt  DateTime?
+  lastSyncedAt    DateTime?
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime                    @updatedAt
+  organization    Organization                @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  createdByUser   User?                       @relation("CreatedIntegrationConnections", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([orgId, provider])
+  @@index([orgId, status])
+  @@index([provider])
+}
+
+model Lead {
+  id                     String   @id @default(uuid()) @db.Uuid
+  email                  String
+  role                   String
+  company                String
+  painPoint              String
+  teamSize               String?
+  currentToolsJson       Json     @default("[]")
+  estimatedMonthlyVolume String?
+  createdAt              DateTime @default(now())
+
+  @@index([createdAt])
+}

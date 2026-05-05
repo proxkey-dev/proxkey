@@ -1,0 +1,17 @@
+{
+  "name": "ProxKey",
+  "url": "https://notomer.com",
+  "hook_attributes": {
+    "url": "https://api.notomer.com/api/github/webhook"
+  },
+  "redirect_url": "https://notomer.com/github/setup",
+  "public": true,
+  "default_permissions": {
+    "actions": "read",
+    "checks": "read",
+    "contents": "read",
+    "metadata": "read",
+    "pull_requests": "read"
+  },
+  "default_events": ["workflow_run", "workflow_job", "pull_request"]
+}

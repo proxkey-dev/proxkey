@@ -1,0 +1,180 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  platform:
+    name: Platform (pnpm workspace)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @proxkey/db exec prisma generate
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Test
+        run: pnpm run test
+
+      - name: Build
+        run: pnpm run build
+
+  frontend:
+    name: Frontend + dashboard API
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: proxkey_test
+          POSTGRES_PASSWORD: proxkey
+          POSTGRES_USER: proxkey
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U proxkey -d proxkey_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    env:
+      CI: true
+      DATABASE_URL: postgresql://proxkey:proxkey@localhost:5433/proxkey_test?schema=public
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
+      DASHBOARD_SESSION_SECRET: ci-test-session-secret-not-production
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            frontend/server/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Install dashboard API dependencies
+        run: npm --prefix server ci
+
+      - name: Validate environment examples
+        run: npm run check:env
+
+      - name: Check tracked secret files
+        run: npm run check:secrets
+
+      - name: Generate Prisma client
+        run: npm --prefix server run prisma:generate
+
+      - name: Prepare test database
+        run: npm --prefix server run prisma:push
+
+      - name: Typecheck frontend
+        run: npm run typecheck
+
+      - name: Typecheck backend
+        run: npm run typecheck:backend
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build frontend
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: https://api.proxkey.dev
+
+      - name: Build dashboard API
+        run: npm run build:backend
+
+      - name: Audit production dependencies
+        run: npm run audit:prod
+
+  cli:
+    name: CLI
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: cli
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: cli/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+  dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high

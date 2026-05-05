@@ -1,0 +1,29 @@
+{
+  "name": "proxkey",
+  "private": true,
+  "description": "ProxKey monorepo — platform API, worker, frontend, CLI, and SDK",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/proxkey-dev/proxkey.git"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build:packages": "pnpm --filter @proxkey/config build && pnpm --filter @proxkey/db build && pnpm --filter @proxkey/types build && pnpm --filter @proxkey/proxkey-js build",
+    "build:apps": "pnpm --filter @proxkey/api build && pnpm --filter @proxkey/worker build",
+    "build": "pnpm run build:packages && pnpm run build:apps",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm -r run test",
+    "dev:api": "pnpm --filter @proxkey/api run dev",
+    "dev:worker": "pnpm --filter @proxkey/worker run dev",
+    "frontend:cli-setup": "npm run prod:cli-setup --prefix frontend",
+    "frontend:cli-setup:railway": "npm run prod:cli-setup:railway --prefix frontend",
+    "frontend:cli-setup:auth0": "npm run prod:cli-setup:auth0 --prefix frontend"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Omer &mdash; Systems Engineer</title>
+    <meta name="description" content="Systems engineer. GT CS. ex-Apple. Building ProxKey.">
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+      :root {
+        color-scheme: dark;
+        --bg: #0a0a0a;
+        --text: #e8e8e8;
+        --muted: #9a9a9a;
+        --line: #252525;
+        --accent: #4ade80;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        min-height: 100%;
+        background: var(--bg);
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 16px;
+        line-height: 1.75;
+      }
+
+      main {
+        width: min(680px, 100%);
+        margin: 0 auto;
+        padding: 72px 24px 88px;
+      }
+
+      header,
+      section {
+        border-bottom: 1px solid var(--line);
+        padding: 0 0 34px;
+        margin: 0 0 34px;
+      }
+
+      section {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 400ms ease, transform 400ms ease;
+      }
+
+      section.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 8vw, 3.5rem);
+        line-height: 1.1;
+        font-weight: 700;
+      }
+
+      h2 {
+        margin-bottom: 14px;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--muted);
+      }
+
+      a {
+        color: var(--text);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      .accent,
+      .project-link {
+        color: var(--accent);
+      }
+
+      .intro {
+        margin-top: 12px;
+        color: var(--muted);
+      }
+
+      .links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 18px;
+        margin-top: 24px;
+      }
+
+      .work-list {
+        display: grid;
+        gap: 16px;
+      }
+
+      .year {
+        color: var(--muted);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        section {
+          opacity: 1;
+          transform: none;
+          transition: none;
+        }
+      }
+
+      @media (max-width: 540px) {
+        body {
+          font-size: 15px;
+        }
+
+        main {
+          padding: 42px 18px 64px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Omer</h1>
+        <p class="intro">Systems engineer. GT CS (AI). ex-Apple.</p>
+        <nav class="links" aria-label="Profile links">
+          <a class="project-link" href="https://github.com/notomer">GitHub</a>
+          <a href="#">LinkedIn</a>
+          <a href="https://notomer.com">Website: https://notomer.com</a>
+          <a href="mailto:omer@proxkey.dev">omer@proxkey.dev</a>
+        </nav>
+      </header>
+
+      <section>
+        <h2>Now</h2>
+        <p>
+          Building <span class="accent">ProxKey</span> - CI cost attribution for engineering teams.
+          Finishing my MS at Georgia Tech, specializing in AI. Previously at Apple working on iOS CI infrastructure.
+        </p>
+      </section>
+
+      <section>
+        <h2>Work</h2>
+        <div class="work-list">
+          <p><span class="year">[2026]</span> <span class="accent">ProxKey</span> - CI cost attribution for engineering teams.</p>
+          <p><span class="year">[2025]</span> <a class="project-link" href="https://github.com/notomer/Kairo">Kairo</a> - Swift framework that adjusts app performance from battery, thermal, and network conditions.</p>
+          <p><span class="year">[2024]</span> <span class="accent">Apple CI tooling</span> - ASan violation checker and hybrid ML plus rule-based CI log compaction for structured root-cause digests.</p>
+          <p><span class="year">[2024]</span> <span class="accent">Keynote viewer</span> - Parser and pure HTML/JS interactive viewer for Apple Keynote data.</p>
+          <p><span class="year">[2023]</span> <span class="accent">Raytheon robot</span> - ROS-based autonomous ground robot on NVIDIA Jetson with LiDAR, cameras, IMU, GPS, and target-finding perception.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Background</h2>
+        <p>
+          Georgia Tech MS Computer Science, AI specialization, nearly complete. Four years at Apple across CI,
+          sensing, connectivity, and iOS systems work. Raytheon student researcher on an autonomous ground robot
+          that won 1st place US East. I care about GPU architecture, compiler optimization, systems tooling,
+          parallel computing, and ML infrastructure.
+        </p>
+      </section>
+
+      <section>
+        <h2>Writing</h2>
+        <p>Nothing published yet.</p>
+      </section>
+
+      <section>
+        <h2>Contact</h2>
+        <p><a href="mailto:omer@proxkey.dev">omer@proxkey.dev</a></p>
+        <p><a href="mailto:hello@proxkey.dev">hello@proxkey.dev</a> for ProxKey inquiries</p>
+      </section>
+    </main>
+
+    <script>
+      const sections = document.querySelectorAll('section');
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.18 });
+
+      sections.forEach((section) => observer.observe(section));
+    </script>
+  </body>
+</html>

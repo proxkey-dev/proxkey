@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Confirm new email • ProxKey</title>
+    <style>
+      :root { color-scheme: dark; }
+      html, body { margin: 0; padding: 0; height: 100%; background: radial-gradient(ellipse at top, #0b1020, #070a16 60%, #000 100%); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", sans-serif; }
+      .wrap { position: relative; min-height: 100vh; overflow: hidden; }
+      .card-wrap { position: relative; z-index: 10; max-width: 680px; margin: 0 auto; padding: 64px 24px; }
+      @media (max-width: 480px) { .card-wrap { padding: 32px 16px; } }
+      .card { border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); backdrop-filter: blur(16px); box-shadow: 0 10px 40px rgba(0,0,0,0.4); overflow: hidden; }
+      .card-hd { border-bottom: 1px solid rgba(255,255,255,0.1); padding: 24px; }
+      .card-tt { margin: 0; font-weight: 700; color: #fff; letter-spacing: -0.01em; font-size: clamp(20px, 2.4vw, 24px); }
+      .card-bd { padding: 24px; color: #fff; }
+      .btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; padding: 10px 16px; font-weight: 600; background: rgba(251,191,36,0.9); color: #000; text-decoration: none; }
+      .btn:hover { background: rgba(252,211,77,0.95); }
+      .muted { margin-top: 16px; color: rgba(255,255,255,0.7); font-size: 14px; }
+      .muted .break { word-break: break-word; overflow-wrap: anywhere; }
+      .foot { padding: 12px; text-align: center; color: rgba(255,255,255,0.5); font-size: 11px; border-top: 1px solid rgba(255,255,255,0.1); }
+      canvas.stars { position: absolute; inset: 0; width: 100%; height: 100%; }
+      svg.shooters { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <canvas class="stars"></canvas>
+      <svg class="shooters"></svg>
+
+      <div class="card-wrap">
+        <div class="card">
+          <div class="card-hd">
+            <h1 class="card-tt">Confirm your new email address</h1>
+          </div>
+          <div class="card-bd">
+            <p class="mb-3">You requested to change your ProxKey email. Confirm the change below.</p>
+            <a href="https://proxkey.dev/auth/change-email" class="btn" rel="noopener noreferrer">Confirm change</a>
+            <div class="muted">
+              <p>Change confirmation link:</p>
+              <div class="break"><code class="k">{{ .ConfirmationURL }}</code></div>
+            </div>
+          </div>
+          <div class="foot">One-time use • Time-limited • Secure</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function(){
+        const canvas=document.querySelector('canvas.stars'); const ctx=canvas.getContext('2d'); const stars=[]; const starDensity=0.00022; const minTw=0.35,maxTw=1.1; let dpr=1; function build(){ dpr=Math.max(1,Math.floor(devicePixelRatio||1)); const rect=canvas.getBoundingClientRect(); canvas.width=Math.max(1,Math.floor(rect.width*dpr)); canvas.height=Math.max(1,Math.floor(rect.height*dpr)); ctx.setTransform(dpr,0,0,dpr,0,0); stars.length=0; const n=Math.floor(rect.width*rect.height*starDensity); for(let i=0;i<n;i++){ stars.push({ x:Math.random()*rect.width, y:Math.random()*rect.height, r:0.5+Math.random()*0.7, o:0.5+Math.random()*0.5, tw:minTw+Math.random()*(maxTw-minTw)});} } let stop=false, raf=0; function render(){ if(stop) return; const rect=canvas.getBoundingClientRect(); const expW=Math.max(1,Math.floor(rect.width*dpr)), expH=Math.max(1,Math.floor(rect.height*dpr)); if(canvas.width!==expW||canvas.height!==expH){ build(); } ctx.clearRect(0,0,rect.width,rect.height); const now=performance.now(); for(const s of stars){ const o=0.5+Math.abs(Math.sin((now*0.001)/s.tw)*0.5); ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fillStyle=`rgba(255,255,255,${o})`; ctx.shadowColor='rgba(255,255,255,0.6)'; ctx.shadowBlur=1.5; ctx.fill(); } ctx.shadowBlur=0; raf=requestAnimationFrame(render);} const m=matchMedia('(prefers-reduced-motion: reduce)'); build(); if(!m.matches){ raf=requestAnimationFrame(render);} const ro=new ResizeObserver(build); ro.observe(canvas); window.addEventListener('pagehide',()=>{ stop=true; cancelAnimationFrame(raf); ro.disconnect();}); })();
+    </script>
+    <script>
+      (function(){
+        const svg=document.querySelector('svg.shooters'); let last=0,nextDelay=800; const minDelay=650,maxDelay=2800,maxConcurrent=4; function gid(){return `g${Math.floor(Math.random()*1e9)}`;} const gradId=gid(); svg.innerHTML=`<defs><linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#2EB9DF" stop-opacity="0"/><stop offset="100%" stop-color="#9E00FF" stop-opacity="1"/></linearGradient><filter id="${gradId}-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`; const stars=[]; function spawn(){ const side=Math.floor(Math.random()*4); const W=innerWidth,H=innerHeight,off=Math.random(); let x=0,y=0,a=45; if(side===0){x=off*W;y=-10;a=45+Math.random()*30;} else if(side===1){x=W+10;y=off*H;a=135+Math.random()*30;} else if(side===2){x=off*W;y=H+10;a=225+Math.random()*30;} else {x=-10;y=off*H;a=315+Math.random()*30;} const speed=12+Math.random()*(28-12); const maxLife=800+Math.random()*2000; const g=document.createElementNS('http://www.w3.org/2000/svg','g'); g.setAttribute('filter',`url(#${gradId}-glow)`); const rect=document.createElementNS('http://www.w3.org/2000/svg','rect'); rect.setAttribute('x',String(x)); rect.setAttribute('y',String(y)); rect.setAttribute('width','12'); rect.setAttribute('height','1.2'); rect.setAttribute('rx','0.6'); rect.setAttribute('fill',`url(#${gradId})`); g.appendChild(rect); svg.appendChild(g); stars.push({g,rect,x,y,a,speed,life:0,maxLife}); }
+        let raf=0, stop=false; function step(t){ if(stop) return; if(t-last>=nextDelay && stars.length<maxConcurrent){ spawn(); last=t; nextDelay=minDelay+Math.random()*(maxDelay-minDelay);} const keep=[]; for(const s of stars){ const vx=s.speed*Math.cos(s.a*Math.PI/180), vy=s.speed*Math.sin(s.a*Math.PI/180); s.x+=vx; s.y+=vy; s.life+=16; const scale=1+Math.min(1.8, s.life/s.maxLife); s.rect.setAttribute('x',String(s.x)); s.rect.setAttribute('y',String(s.y)); s.rect.setAttribute('width',String(Math.max(1,12*scale))); s.g.setAttribute('opacity',String(1-s.life/s.maxLife)); const cx=s.x+Math.max(1,12*scale)/2, cy=s.y+1.2/2; s.rect.setAttribute('transform',`rotate(${s.a}, ${cx}, ${cy})`); const oob=s.x<-40||s.x>innerWidth+40||s.y<-40||s.y>innerHeight+40||s.life>=s.maxLife; if(!oob) keep.push(s); else s.g.remove(); } stars.splice(0,stars.length,...keep); raf=requestAnimationFrame(step);} const m=matchMedia('(prefers-reduced-motion: reduce)'); if(!m.matches){ raf=requestAnimationFrame(step);} window.addEventListener('pagehide',()=>{ stop=true; cancelAnimationFrame(raf);}); })();
+    </script>
+  </body>
+</html>
+
+

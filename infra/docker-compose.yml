@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: proxkey
+      POSTGRES_USER: proxkey
+      POSTGRES_PASSWORD: proxkey
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U proxkey"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+
+  api:
+    image: ghcr.io/notomer/proxkey-api:${IMAGE_TAG:-latest}
+    container_name: proxkey-api
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    image: ghcr.io/notomer/proxkey-worker:${IMAGE_TAG:-latest}
+    container_name: proxkey-worker
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.worker
+    environment:
+      NODE_ENV: worker
+    env_file:
+      - ../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata: {}
+  redisdata: {}

@@ -1,0 +1,55 @@
+{
+  "name": "proxkey",
+  "version": "0.1.0",
+  "description": "CLI for sending support issues, CI failures, QA notes, logs, and incident context to the ProxKey backend for automated engineering triage.",
+  "homepage": "https://proxkey.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/proxkey-dev/CLI.git",
+    "directory": "."
+  },
+  "bugs": {
+    "url": "https://github.com/proxkey-dev/CLI/issues"
+  },
+  "bin": {
+    "proxkey": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "preferGlobal": true,
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "test": "node dist/index.js version",
+    "prepack": "npm run build",
+    "pack:tarball": "npm pack"
+  },
+  "keywords": [
+    "proxkey",
+    "cli",
+    "triage",
+    "incidents",
+    "support",
+    "ci",
+    "qa",
+    "logs",
+    "developer-tools",
+    "engineering",
+    "devops",
+    "incident-response"
+  ],
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.2"
+  }
+}
