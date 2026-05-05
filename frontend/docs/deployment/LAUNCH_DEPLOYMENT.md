@@ -5,23 +5,19 @@
 Frontend:
 
 - `VITE_API_BASE_URL=https://api.proxkey.dev`
-- `VITE_AUTH0_DOMAIN=your-tenant.us.auth0.com`
-- `VITE_AUTH0_CLIENT_ID=your_auth0_spa_client_id`
-- `VITE_AUTH0_AUDIENCE=https://api.proxkey.dev`
-- `VITE_AUTH0_CALLBACK_URL=https://app.proxkey.dev/callback`
 
 Backend:
 
 - `NODE_ENV=production`
 - `PORT=4000`
 - `DATABASE_URL=...`
-- `FRONTEND_ORIGIN=https://app.proxkey.dev`
+- `CORS_ALLOWED_ORIGINS=https://proxkey.dev,https://www.proxkey.dev,https://app.proxkey.dev`
+- `DASHBOARD_SESSION_SECRET=...` (or `JWT_SECRET`)
+- `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` for Sign in with GitHub
+- `FRONTEND_ORIGIN=https://app.proxkey.dev` (legacy single-origin; prefer `CORS_ALLOWED_ORIGINS`)
 - `COOKIE_DOMAIN=.proxkey.dev`
 - `SESSION_COOKIE_NAME=proxkey_session`
 - `SESSION_TTL_HOURS=168`
-- `AUTH0_DOMAIN=your-tenant.us.auth0.com`
-- `AUTH0_AUDIENCE=https://api.proxkey.dev`
-- `AUTH0_ISSUER_BASE_URL=https://your-tenant.us.auth0.com/`
 - `AI_PROVIDER=openai` or `heuristic`
 - `AI_BASE_URL=...` when using a compatible gateway
 - `AI_API_KEY=...`
@@ -65,7 +61,6 @@ npm run prisma:push
 2. Build command: `npm run build`
 3. Output directory: `dist`
 4. Set `VITE_API_BASE_URL=https://api.proxkey.dev`
-5. Set `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID`, `VITE_AUTH0_AUDIENCE`, and `VITE_AUTH0_CALLBACK_URL`
 
 ## 6. Required domains
 
@@ -77,10 +72,8 @@ npm run prisma:push
 - Backend `FRONTEND_ORIGIN=https://app.proxkey.dev,http://localhost:5173`
 - Backend `COOKIE_DOMAIN=.proxkey.dev`
 - Cookie policy stays `HttpOnly`, `SameSite=Lax`, `Secure=true` in production
-- Frontend sends `Authorization: Bearer <auth0_access_token>` to the API
-- Auth0 allowed callback URL: `https://app.proxkey.dev/callback`
-- Auth0 allowed logout URL: `https://app.proxkey.dev`
-- Auth0 allowed web origin: `https://app.proxkey.dev`
+- Frontend sends `Authorization: Bearer <session_token>` for email/password sessions, or uses the GitHub OAuth cookie for dashboard routes
+- GitHub OAuth callback URL: `https://proxkey.dev/github/callback` (or your marketing origin + `/github/callback`)
 
 ## 8. Stripe webhook path
 
@@ -98,16 +91,15 @@ and register that URL in Stripe with the signing secret stored in `STRIPE_WEBHOO
 ## 9. First admin account creation
 
 1. Open `https://app.proxkey.dev/signup?plan=team`
-2. Complete Auth0 Universal Login with a real work email.
-3. Create the first workspace name in the signup flow.
-4. ProxKey bootstraps the first local user/org from the Auth0 identity.
-5. Finish onboarding by generating the first packet.
+2. Complete **Sign in with GitHub** or register with email/password.
+3. Create the first workspace through onboarding.
+4. Finish onboarding by generating the first packet.
 
 ## 10. Smoke test checklist
 
 - Sign up
 - Login
-- Auth0 redirect returns through `/callback` and lands on `/dashboard`
+- Login via GitHub or email/password; `/callback` redirects to login (legacy path)
 - Create workspace
 - Create packet from onboarding
 - Confirm the AI result completes

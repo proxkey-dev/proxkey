@@ -10,12 +10,6 @@ import {
 } from '../lib/proxkey-api'
 import { apiUrl, postLogout } from '../lib/api'
 import { clearActiveOrgId, getActiveOrgId, setActiveOrgId } from '../lib/activeOrg'
-import {
-  clearPendingAuth0Signup,
-  loadPendingAuth0Signup,
-  savePendingAuth0Signup,
-} from '../lib/auth0'
-import { useAuth0Runtime } from './Auth0RuntimeContext'
 
 type AuthError = {
   message: string
@@ -30,7 +24,7 @@ interface AuthContextType {
   user: AuthUser | null
   session: AuthSession | null
   loading: boolean
-  authStrategy: 'local' | 'auth0'
+  authStrategy: 'local'
   authError: string | null
   profile: ProfileType | null
   membership: OrgMembership | null
@@ -68,19 +62,6 @@ function buildAuthError(error: unknown): AuthError {
   }
 
   return { message: 'An unexpected error occurred' }
-}
-
-/** Right after OAuth redirect getAccessTokenSilently can flake once; bootstrap requires a Bearer immediately. */
-async function resolveAuth0AccessToken(getter: () => Promise<string | null>): Promise<string | null> {
-  const delaysMs = [0, 75, 200, 450, 750]
-  for (const ms of delaysMs) {
-    if (ms > 0) {
-      await new Promise((resolve) => setTimeout(resolve, ms))
-    }
-    const token = await getter().catch(() => null)
-    if (token) return token
-  }
-  return null
 }
 
 function buildUser(payload: AuthUser): AuthUser & { user_metadata: { full_name?: string | null } } {
@@ -149,8 +130,6 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const auth0 = useAuth0Runtime()
-  const { configured, getAccessToken, isAuthenticated, isLoading, logout, startAuthFlow } = auth0
   const [user, setUser] = useState<
     (AuthUser & { user_metadata: { full_name?: string | null } }) | null
   >(null)
@@ -197,125 +176,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   useEffect(() => {
-    if (!configured) {
-      setAccessTokenProvider(null)
-      return
-    }
-
-    if (isAuthenticated) {
-      setAccessTokenProvider(getAccessToken)
-      return
-    }
-
-    setAccessTokenProvider(null)
-  }, [configured, getAccessToken, isAuthenticated])
-
-  useEffect(() => {
     let isMounted = true
 
     const hydrate = async () => {
-      if (configured && isLoading) {
-        return
-      }
-
       try {
-        if (!configured) {
-          try {
-            const ghRes = await fetch(apiUrl('/api/auth/me'), { credentials: 'include' })
-            if (ghRes.ok) {
-              const data = (await ghRes.json()) as {
-                githubLogin: string
-                email: string
-                orgs: Array<{ id: string; name: string; plan?: string; role: string }>
-              }
-              if (data.orgs?.length) {
-                const stored = getActiveOrgId()
-                const fromStored = stored ? data.orgs.find((o) => o.id === stored) : undefined
-                const org = fromStored ?? data.orgs[0]!
-                setActiveOrgId(org.id)
-                const role = mapGithubOrgRole(org.role)
-                if (isMounted) {
-                  setToken(null)
-                  applyPayload({
-                    user: {
-                      id: data.githubLogin,
-                      email: data.email,
-                      orgId: org.id,
-                      name: data.githubLogin,
-                      role,
-                      status: 'ACTIVE',
-                    },
-                    organization: { id: org.id, name: org.name },
-                  })
-                  setLoading(false)
-                }
-                return
-              }
+        try {
+          const ghRes = await fetch(apiUrl('/api/auth/me'), { credentials: 'include' })
+          if (ghRes.ok) {
+            const data = (await ghRes.json()) as {
+              githubLogin: string
+              email: string
+              orgs: Array<{ id: string; name: string; plan?: string; role: string }>
             }
-          } catch {
-            /* fall through to legacy /api/me */
-          }
-        }
-
-        if (configured) {
-          if (!isAuthenticated) {
-            if (isMounted) {
-              clearState()
-            }
-            return
-          }
-
-          const bearer = await resolveAuth0AccessToken(getAccessToken)
-          if (!bearer) {
-            if (isMounted) {
-              clearState()
-              setAuthError('AUTH0_ACCESS_TOKEN_UNAVAILABLE')
-            }
-            return
-          }
-          setToken(bearer)
-
-          const pendingSignup = loadPendingAuth0Signup()
-
-          try {
-            await proxkeyApi.bootstrap({
-              name: pendingSignup?.name,
-              organizationName: pendingSignup?.organizationName,
-              plan: pendingSignup?.plan,
-            })
-            clearPendingAuth0Signup()
-          } catch (bootstrapError) {
-            const msg = bootstrapError instanceof Error ? bootstrapError.message : ''
-            // New Auth0 user with no workspace – send them to sign up
-            if (
-              msg.includes('BOOTSTRAP_FAILED') ||
-              msg.toLowerCase().includes('no proxkey workspace') ||
-              msg.toLowerCase().includes('start with sign up')
-            ) {
-              clearPendingAuth0Signup()
+            if (data.orgs?.length) {
+              const stored = getActiveOrgId()
+              const fromStored = stored ? data.orgs.find((o) => o.id === stored) : undefined
+              const org = fromStored ?? data.orgs[0]!
+              setActiveOrgId(org.id)
+              const mapRole = mapGithubOrgRole(org.role)
               if (isMounted) {
-                clearState()
-                setAuthError('NO_WORKSPACE')
+                setToken(null)
+                applyPayload({
+                  user: {
+                    id: data.githubLogin,
+                    email: data.email,
+                    orgId: org.id,
+                    name: data.githubLogin,
+                    role: mapRole,
+                    status: 'ACTIVE',
+                  },
+                  organization: { id: org.id, name: org.name },
+                })
+                setLoading(false)
               }
               return
             }
-            throw bootstrapError
           }
-
-          const refreshed = await proxkeyApi.me()
-          if (!refreshed.authenticated || !refreshed.user || !refreshed.organization) {
-            throw new Error('Failed to load authenticated user.')
-          }
-
-          if (isMounted) {
-            applyPayload({
-              user: refreshed.user,
-              organization: refreshed.organization,
-              accessToken: refreshed.accessToken,
-            })
-          }
-
-          return
+        } catch {
+          /* fall through to /api/me */
         }
 
         const me = await proxkeyApi.me().catch(() => ({ authenticated: false }) as const)
@@ -334,9 +232,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       } catch (error) {
         if (isMounted) {
-          if (configured) {
-            setAuthError(error instanceof Error ? error.message : 'Authentication failed.')
-          }
+          setAuthError(error instanceof Error ? error.message : 'Authentication failed.')
           clearState()
         }
       } finally {
@@ -351,14 +247,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => {
       isMounted = false
     }
-  }, [configured, isAuthenticated, isLoading, getAccessToken])
+  }, [])
 
   const value = useMemo<AuthContextType>(
     () => ({
       user,
       session,
       loading,
-      authStrategy: configured ? 'auth0' : 'local',
+      authStrategy: 'local',
       authError,
       profile,
       membership,
@@ -369,25 +265,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       },
       signUp: async (email, password, fullName, organizationName, plan) => {
         setAuthError(null)
-
-        if (configured) {
-          try {
-            if (!fullName?.trim() || !organizationName?.trim()) {
-              throw new Error('Enter your full name and workspace name before continuing.')
-            }
-
-            savePendingAuth0Signup({
-              name: fullName.trim(),
-              organizationName: organizationName.trim(),
-              plan: plan ?? 'FREE',
-            })
-            await startAuthFlow('signup')
-            return { error: null, redirecting: true }
-          } catch (error) {
-            clearPendingAuth0Signup()
-            return { error: buildAuthError(error) }
-          }
-        }
 
         try {
           const payload = await proxkeyApi.register(
@@ -414,19 +291,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       signIn: async (email, password, organizationId) => {
         setAuthError(null)
 
-        if (configured) {
-          try {
-            void email
-            void password
-            void organizationId
-            clearPendingAuth0Signup()
-            await startAuthFlow('login')
-            return { error: null, redirecting: true }
-          } catch (error) {
-            return { error: buildAuthError(error) }
-          }
-        }
-
         try {
           void organizationId
           const payload = await proxkeyApi.login(email.trim().toLowerCase(), password)
@@ -447,12 +311,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       signOut: async () => {
         try {
           setAuthError(null)
-          if (configured) {
-            clearState()
-            clearPendingAuth0Signup()
-            logout()
-            return { error: null, redirecting: true }
-          }
           await postLogout().catch(() => {})
           await proxkeyApi.logout().catch(() => {})
           clearState()
@@ -464,14 +322,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       resetPassword: async (_email) => {
         setAuthError(null)
 
-        if (configured) {
-          return {
-            error: {
-              message: 'Password resets are managed by Auth0 for this workspace.',
-            },
-          }
-        }
-
         return {
           error: {
             message: 'Password reset is not implemented in this MVP yet.',
@@ -481,15 +331,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }),
     [
       authError,
-      configured,
       loading,
-      logout,
       membership,
       organization,
       profile,
       role,
       session,
-      startAuthFlow,
       user,
     ],
   )

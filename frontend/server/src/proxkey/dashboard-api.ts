@@ -12,12 +12,15 @@ import {
 } from '@prisma/client'
 import { z } from 'zod'
 import type { ProxKeyConfig } from './config'
-import { upsertAuth0User, verifyAuth0AccessToken } from './auth'
 import { daysAgo, getRepoDailySpend30d, getRepoWowMap, getSpendBreakdown, getSpendSummary, getWeeklySpendSeries } from './spend-queries'
 
 function gravatarUrl(email: string): string {
   const hash = crypto.createHash('md5').update(email.trim().toLowerCase()).digest('hex')
   return `https://www.gravatar.com/avatar/${hash}?d=identicon&s=128`
+}
+
+function hashSessionToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex')
 }
 
 const COOKIE_NAME = 'pk_ci_dashboard'
@@ -144,105 +147,45 @@ export async function registerDashboardApi(
     return org.id
   }
 
-  // Public Auth0 config – consumed by the CLI to decide which login flow to use
-  app.get('/api/auth/config', async () => {
-    if (!config.AUTH0_DOMAIN || !config.AUTH0_AUDIENCE) {
-      return { strategy: 'local' as const, auth0: null }
-    }
-    return {
-      strategy: 'auth0' as const,
-      auth0: {
-        domain: config.AUTH0_DOMAIN,
-        audience: config.AUTH0_AUDIENCE,
-        cliClientId: config.AUTH0_CLI_CLIENT_ID ?? null,
-        cliEnabled: Boolean(config.AUTH0_CLI_CLIENT_ID),
-        scope: config.AUTH0_CLI_SCOPE,
-      },
-    }
-  })
-
-  // Bootstrap: called after Auth0 redirect to create/find the user's workspace
-  app.post('/api/auth/bootstrap', async (request, reply) => {
-    const bearer = request.headers.authorization?.replace(/^Bearer\s+/i, '').trim()
-    if (!bearer) {
-      return reply.status(401).send({ error: 'UNAUTHORIZED' })
-    }
-
-    if (!config.AUTH0_DOMAIN || !config.AUTH0_AUDIENCE) {
-      return reply.status(503).send({ error: 'AUTH0_NOT_CONFIGURED' })
-    }
-
-    let identity: { email: string; name: string; subject: string | null; auth0OrgId: string | null }
-    try {
-      identity = await verifyAuth0AccessToken({ accessToken: bearer, config })
-    } catch {
-      return reply.status(401).send({ error: 'INVALID_TOKEN' })
-    }
-
-    const body = z
-      .object({
-        name: z.string().trim().optional(),
-        organizationName: z.string().trim().optional(),
-        plan: z.enum(['FREE', 'FOUNDER', 'TEAM', 'GROWTH', 'ENTERPRISE']).optional(),
-      })
-      .parse(request.body)
-
-    try {
-      const user = await upsertAuth0User({
-        subject: identity.subject,
-        email: identity.email,
-        name: body.name || identity.name,
-        organizationName: body.organizationName,
-        plan: body.plan as PlanTier | undefined,
-        auth0OrgId: identity.auth0OrgId,
-      })
-
-      const org = await prisma.organization.findUnique({ where: { id: user.orgId } })
-      return {
-        authenticated: true,
-        user: { email: user.email },
-        organization: org ? { id: org.id, name: org.name } : null,
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Bootstrap failed.'
-      return reply.status(400).send({ error: 'BOOTSTRAP_FAILED', message })
-    }
-  })
-
+  app.get('/api/auth/config', async () => ({
+    strategy: 'local' as const,
+  }))
   // /api/me – used by proxkeyApi.me() in the frontend AuthContext
   app.get('/api/me', async (request, reply) => {
     const bearer = request.headers.authorization?.replace(/^Bearer\s+/i, '').trim()
 
-    if (bearer && config.AUTH0_DOMAIN && config.AUTH0_AUDIENCE) {
-      try {
-        const identity = await verifyAuth0AccessToken({ accessToken: bearer, config })
-        const user = await prisma.user.findFirst({
-          where: identity.subject
-            ? { OR: [{ auth0UserId: identity.subject }, { email: identity.email }] }
-            : { email: identity.email },
-          include: { organization: true },
-        })
-
-        if (user && user.status !== UserStatus.DISABLED) {
-          return {
-            authenticated: true,
-            user: {
-              id: user.id,
-              orgId: user.orgId,
-              email: user.email,
-              name: user.name,
-              role: user.role,
-              status: user.status,
-            },
-            organization: { id: user.organization.id, name: user.organization.name, domain: user.organization.domain },
-          }
+    if (bearer) {
+      const dbSession = await prisma.session.findFirst({
+        where: {
+          tokenHash: hashSessionToken(bearer),
+          expiresAt: { gt: new Date() },
+        },
+        include: {
+          user: { include: { organization: true } },
+        },
+      })
+      if (dbSession && dbSession.user.status !== UserStatus.DISABLED) {
+        const user = dbSession.user
+        return {
+          authenticated: true,
+          user: {
+            id: user.id,
+            orgId: user.orgId,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            status: user.status,
+          },
+          organization: {
+            id: user.organization.id,
+            name: user.organization.name,
+            domain: user.organization.domain,
+          },
+          accessToken: bearer,
         }
-      } catch {
-        // Fall through to cookie auth
       }
     }
 
-    // Cookie-based session fallback (GitHub OAuth flow)
     const session = await readSession(request, secret)
     if (session) {
       const org = await prisma.organization.findUnique({ where: { id: session.orgId } })
@@ -265,32 +208,29 @@ export async function registerDashboardApi(
     return reply.status(401).send({ authenticated: false })
   })
 
-  // /api/auth/me – dashboard session check; supports both Auth0 Bearer and GitHub cookie
+  // /api/auth/me – dashboard session check (cookie or email/password bearer session)
   app.get('/api/auth/me', async (request, reply) => {
-    // Auth0 Bearer token path
     const bearer = request.headers.authorization?.replace(/^Bearer\s+/i, '').trim()
-    if (bearer && config.AUTH0_DOMAIN && config.AUTH0_AUDIENCE) {
-      try {
-        const identity = await verifyAuth0AccessToken({ accessToken: bearer, config })
-        const user = await prisma.user.findFirst({
-          where: identity.subject
-            ? { OR: [{ auth0UserId: identity.subject }, { email: identity.email }] }
-            : { email: identity.email },
-          include: { organization: true },
-        })
-
-        if (user && user.status !== UserStatus.DISABLED) {
-          return {
-            user: {
-              login: user.name ?? user.email,
-              avatarUrl: gravatarUrl(user.email),
-            },
-            organizations: [{ id: user.organization.id, name: user.organization.name }],
-            currentOrganizationId: user.organization.id,
-          }
+    if (bearer) {
+      const dbSession = await prisma.session.findFirst({
+        where: {
+          tokenHash: hashSessionToken(bearer),
+          expiresAt: { gt: new Date() },
+        },
+        include: {
+          user: { include: { organization: true } },
+        },
+      })
+      if (dbSession && dbSession.user.status !== UserStatus.DISABLED) {
+        const user = dbSession.user
+        return {
+          user: {
+            login: user.name ?? user.email,
+            avatarUrl: gravatarUrl(user.email),
+          },
+          organizations: [{ id: user.organization.id, name: user.organization.name }],
+          currentOrganizationId: user.organization.id,
         }
-      } catch {
-        // Fall through to cookie auth
       }
     }
 
@@ -821,21 +761,17 @@ export async function registerDashboardApi(
     request: FastifyRequest,
     reply: FastifyReply,
   ): Promise<{ orgId: string; userId: string } | null> {
-    // Try Auth0 bearer first
     const bearer = request.headers.authorization?.replace(/^Bearer\s+/i, '').trim()
-    if (bearer && config.AUTH0_DOMAIN && config.AUTH0_AUDIENCE) {
-      try {
-        const identity = await verifyAuth0AccessToken({ accessToken: bearer, config })
-        const user = await prisma.user.findFirst({
-          where: identity.subject
-            ? { OR: [{ auth0UserId: identity.subject }, { email: identity.email }] }
-            : { email: identity.email },
-        })
-        if (user && user.status !== UserStatus.DISABLED) {
-          return { orgId: user.orgId, userId: user.id }
-        }
-      } catch {
-        // fall through to cookie
+    if (bearer) {
+      const dbSession = await prisma.session.findFirst({
+        where: {
+          tokenHash: hashSessionToken(bearer),
+          expiresAt: { gt: new Date() },
+        },
+        include: { user: true },
+      })
+      if (dbSession && dbSession.user.status !== UserStatus.DISABLED) {
+        return { orgId: dbSession.user.orgId, userId: dbSession.user.id }
       }
     }
     // Cookie session

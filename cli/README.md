@@ -322,7 +322,7 @@ For local developer use, run:
 proxkey login
 ```
 
-If the backend exposes Auth0 device login through `GET /api/auth/config`, `proxkey login` will automatically use that flow.
+`proxkey login` prompts for email and password and authenticates against `POST /api/auth/login` on the configured API base URL.
 
 ### API Key Authentication
 

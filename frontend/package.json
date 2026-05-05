@@ -11,7 +11,6 @@
     "dev:with-api": "concurrently -k -n vite,api -c cyan,magenta \"vite\" \"npm --prefix server run dev\"",
     "prod:cli-setup": "bash scripts/production-cli-setup.sh",
     "prod:cli-setup:railway": "bash scripts/production-cli-setup.sh railway",
-    "prod:cli-setup:auth0": "bash scripts/production-cli-setup.sh auth0",
     "build": "tsc && vite build",
     "build:backend": "npm --prefix server run build",
     "typecheck": "tsc --noEmit",
@@ -40,7 +39,6 @@
     "test:production": "npm run test:reset"
   },
   "dependencies": {
-    "@auth0/auth0-react": "^2.16.2",
     "@prisma/client": "^6.19.3",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",

@@ -21,7 +21,6 @@
     "dev:worker": "pnpm --filter @proxkey/worker run dev",
     "frontend:cli-setup": "npm run prod:cli-setup --prefix frontend",
     "frontend:cli-setup:railway": "npm run prod:cli-setup:railway --prefix frontend",
-    "frontend:cli-setup:auth0": "npm run prod:cli-setup:auth0 --prefix frontend",
     "repos:sync": "node scripts/sync-repos.mjs",
     "repos:sync:dry": "node scripts/sync-repos.mjs --dry-run",
     "repos:sync:push": "node scripts/sync-repos.mjs --push",

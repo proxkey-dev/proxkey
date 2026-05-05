@@ -255,8 +255,7 @@ export async function createServer(options: { prisma?: PrismaClient; config?: Pr
 
   await app.register(helmet)
   // Canonical production frontends are always allowed even if CORS_ALLOWED_ORIGINS
-  // is misconfigured — without this the SPA can't call /api/auth/bootstrap or
-  // /api/me after Auth0 returns, leaving the user stuck on the login screen.
+  // is misconfigured — without this the SPA can't call /api/me or the dashboard API.
   const ALWAYS_ALLOWED_ORIGINS = [
     'https://proxkey.dev',
     'https://www.proxkey.dev',

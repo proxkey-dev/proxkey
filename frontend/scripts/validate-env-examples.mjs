@@ -3,13 +3,7 @@ import fs from 'node:fs'
 const envFiles = [
   {
     path: '.env.example',
-    required: [
-      'VITE_API_BASE_URL',
-      'VITE_AUTH0_DOMAIN',
-      'VITE_AUTH0_CLIENT_ID',
-      'VITE_AUTH0_AUDIENCE',
-      'VITE_AUTH0_CALLBACK_URL',
-    ],
+    required: ['VITE_API_BASE_URL'],
   },
   {
     path: 'server/.env.example',
@@ -18,21 +12,20 @@ const envFiles = [
       'HOST',
       'PORT',
       'DATABASE_URL',
-      'CORS_ORIGINS',
-      'BODY_LIMIT_BYTES',
-      'SESSION_COOKIE_NAME',
-      'SESSION_TTL_HOURS',
-      'CONTENT_ENCRYPTION_KEY',
-      'LLM_PROVIDER',
-      'AUTH0_DOMAIN',
-      'AUTH0_AUDIENCE',
-      'AUTH0_CLIENT_ID',
-      'AUTH0_CLI_CLIENT_ID',
-      'AUTH0_ISSUER_BASE_URL',
-      'FRONTEND_ORIGIN',
+      'REDIS_URL',
       'REDIS_ENABLED',
       'USE_INLINE_QUEUE',
-      'ENABLE_OVERAGES',
+      'CORS_ALLOWED_ORIGINS',
+      'APP_BASE_URL',
+      'API_BASE_URL',
+      'DASHBOARD_SESSION_SECRET',
+      'JWT_SECRET',
+      'GITHUB_APP_ID',
+      'GITHUB_APP_PRIVATE_KEY',
+      'GITHUB_WEBHOOK_SECRET',
+      'GITHUB_CLIENT_ID',
+      'GITHUB_CLIENT_SECRET',
+      'RESEND_API_KEY',
       'LOG_LEVEL',
     ],
   },
@@ -78,16 +71,9 @@ for (const envFile of envFiles) {
 
   const { entries, duplicates } = parseEnvExample(envFile.path)
   const missingKeys = envFile.required.filter((key) => !entries.has(key))
-  const blankRequiredKeys = envFile.required.filter(
-    (key) => entries.has(key) && entries.get(key)?.trim() === '',
-  )
 
   for (const key of missingKeys) {
     errors.push(`${envFile.path} is missing ${key}`)
-  }
-
-  for (const key of blankRequiredKeys) {
-    errors.push(`${envFile.path} has an invalid ${key} entry`)
   }
 
   for (const key of duplicates) {

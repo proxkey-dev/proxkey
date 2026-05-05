@@ -31,7 +31,6 @@ async function start(): Promise<void> {
         port: config.PORT,
         version: process.env.RAILWAY_GIT_COMMIT_SHA?.slice(0, 8) ?? process.env.BUILD_VERSION ?? 'dev',
         cors: config.frontendOrigins,
-        auth0: Boolean(config.AUTH0_DOMAIN),
         redis: config.useRedisQueue,
       },
       'ProxKey API started',

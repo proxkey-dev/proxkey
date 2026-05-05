@@ -7,7 +7,7 @@ import { createHash, randomBytes } from 'crypto'
 import readline from 'readline/promises'
 
 type CommandName = 'help' | 'version' | 'login' | 'logout' | 'init' | 'scan' | 'ingest' | 'incident' | 'triage' | 'ci' | 'auth' | 'config' | 'connect' | 'export' | 'status' | 'whoami'
-type AuthType = 'local' | 'auth0' | 'api-key'
+type AuthType = 'local' | 'api-key'
 type CliPlan = 'FREE' | 'FOUNDER' | 'TEAM' | 'GROWTH' | 'ENTERPRISE'
 type ApiKeyScope = 'packets:write' | 'packets:read' | 'usage:read'
 type IntegrationProvider = 'github' | 'jira' | 'linear' | 'slack' | 'sentry' | 'datadog' | 'pagerduty' | 'splunk'
@@ -18,53 +18,8 @@ type SignalKind = 'error' | 'test-failure' | 'dependency' | 'database' | 'networ
 type CliConfig = {
   apiBaseUrl: string
   accessToken?: string
-  refreshToken?: string
-  accessTokenExpiresAt?: string
   email?: string
   authType?: AuthType
-  auth0Domain?: string
-  auth0ClientId?: string
-  auth0Audience?: string
-  auth0Scope?: string
-}
-
-type RemoteAuthConfig = {
-  strategy: 'local' | 'auth0'
-  auth0: null | {
-    domain: string
-    audience: string
-    cliClientId: string | null
-    cliEnabled: boolean
-    scope: string
-  }
-}
-
-type Auth0DeviceCodeResponse = {
-  device_code: string
-  user_code: string
-  verification_uri: string
-  verification_uri_complete?: string
-  expires_in: number
-  interval?: number
-}
-
-type Auth0TokenResponse = {
-  access_token: string
-  refresh_token?: string
-  expires_in?: number
-  token_type?: string
-  scope?: string
-}
-
-type Auth0BootstrapResponse = {
-  authenticated: boolean
-  user: {
-    email: string
-  }
-  organization: {
-    id: string
-    name: string
-  } | null
 }
 
 type LaunchPacket = {
@@ -138,8 +93,6 @@ type IncidentAnalysis = {
   sourceIngestId?: string
 }
 
-const AUTH0_SIGNUP_HINT = 'No ProxKey workspace exists for this Auth0 identity yet. Start with sign up.'
-const AUTH0_DEFAULT_SCOPE = 'openid profile email offline_access'
 const DEFAULT_API_BASE_URL = 'https://api.proxkey.dev'
 const MAX_STORED_LOG_CHARS = 80_000
 const PLAN_VALUES: CliPlan[] = ['FREE', 'FOUNDER', 'TEAM', 'GROWTH', 'ENTERPRISE']
@@ -199,19 +152,15 @@ function saveGlobalConfig(config: CliConfig): void {
 
 function loadConfig(): CliConfig {
   const repo = readJson<Partial<CliConfig>>(getRepoConfigPath()) ?? {}
-  const global = readJson<Partial<CliConfig>>(getGlobalConfigPath()) ?? {}
+  const rawGlobal = readJson<Record<string, unknown>>(getGlobalConfigPath()) ?? {}
+  const clearedLegacyAuth0 = rawGlobal.authType === 'auth0'
+  const global = rawGlobal as Partial<CliConfig>
 
   return {
     apiBaseUrl: (process.env.PROXKEY_API_BASE_URL ?? process.env.API_URL ?? repo.apiBaseUrl ?? global.apiBaseUrl ?? DEFAULT_API_BASE_URL).replace(/\/$/, ''),
-    accessToken: process.env.PROXKEY_API_KEY ?? global.accessToken,
-    refreshToken: global.refreshToken,
-    accessTokenExpiresAt: global.accessTokenExpiresAt,
-    email: global.email,
-    authType: process.env.PROXKEY_API_KEY ? 'api-key' : global.authType,
-    auth0Domain: global.auth0Domain,
-    auth0ClientId: global.auth0ClientId,
-    auth0Audience: global.auth0Audience,
-    auth0Scope: global.auth0Scope,
+    accessToken: clearedLegacyAuth0 ? undefined : process.env.PROXKEY_API_KEY ?? global.accessToken,
+    email: clearedLegacyAuth0 ? undefined : global.email,
+    authType: process.env.PROXKEY_API_KEY ? 'api-key' : clearedLegacyAuth0 ? undefined : global.authType,
   }
 }
 
@@ -249,14 +198,8 @@ function persistApiBaseUrl(apiBaseUrl: string): { clearedAuth: boolean } {
   saveGlobalConfig({
     apiBaseUrl: normalizedNext,
     accessToken: clearedAuth ? undefined : global.accessToken,
-    refreshToken: clearedAuth ? undefined : global.refreshToken,
-    accessTokenExpiresAt: clearedAuth ? undefined : global.accessTokenExpiresAt,
     email: clearedAuth ? undefined : global.email,
     authType: clearedAuth ? undefined : global.authType,
-    auth0Domain: clearedAuth ? undefined : global.auth0Domain,
-    auth0ClientId: clearedAuth ? undefined : global.auth0ClientId,
-    auth0Audience: clearedAuth ? undefined : global.auth0Audience,
-    auth0Scope: clearedAuth ? undefined : global.auth0Scope,
   })
 
   return { clearedAuth }
@@ -268,102 +211,11 @@ function serializeConfig(config: CliConfig) {
     authType: config.authType ?? null,
     email: config.email ?? null,
     hasAccessToken: Boolean(config.accessToken),
-    hasRefreshToken: Boolean(config.refreshToken),
-    auth0Domain: config.auth0Domain ?? null,
-    auth0ClientId: config.auth0ClientId ?? null,
-    auth0Audience: config.auth0Audience ?? null,
   }
-}
-
-function toExpiryIso(expiresInSeconds?: number): string | undefined {
-  if (!expiresInSeconds || Number.isNaN(expiresInSeconds) || expiresInSeconds <= 0) {
-    return undefined
-  }
-
-  return new Date(Date.now() + expiresInSeconds * 1000).toISOString()
-}
-
-function shouldRefreshAccessToken(config: CliConfig): boolean {
-  if (isEnvTokenOverride() || config.authType !== 'auth0' || !config.refreshToken) {
-    return false
-  }
-
-  if (!config.accessToken) {
-    return true
-  }
-
-  if (!config.accessTokenExpiresAt) {
-    return false
-  }
-
-  const expiresAt = Date.parse(config.accessTokenExpiresAt)
-  if (Number.isNaN(expiresAt)) {
-    return false
-  }
-
-  return expiresAt - Date.now() <= 60_000
-}
-
-function isExpiredAuth0AccessToken(config: CliConfig): boolean {
-  if (config.authType !== 'auth0' || !config.accessToken || !config.accessTokenExpiresAt) {
-    return false
-  }
-
-  const expiresAt = Date.parse(config.accessTokenExpiresAt)
-  if (Number.isNaN(expiresAt)) {
-    return false
-  }
-
-  return expiresAt <= Date.now()
-}
-
-async function refreshAuth0AccessToken(config: CliConfig): Promise<CliConfig> {
-  if (!config.refreshToken || !config.auth0Domain || !config.auth0ClientId) {
-    return config
-  }
-
-  const response = await fetch(`https://${config.auth0Domain}/oauth/token`, {
-    method: 'POST',
-    headers: {
-      accept: 'application/json',
-      'content-type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      grant_type: 'refresh_token',
-      client_id: config.auth0ClientId,
-      refresh_token: config.refreshToken,
-    }).toString(),
-  })
-
-  const data = (await response.json().catch(() => null)) as
-    | (Auth0TokenResponse & { error?: string; error_description?: string })
-    | null
-
-  if (!response.ok || !data?.access_token) {
-    throw new Error(data?.error_description ?? data?.error ?? 'Auth0 session refresh failed. Run proxkey login again.')
-  }
-
-  const nextConfig: CliConfig = {
-    ...config,
-    accessToken: data.access_token,
-    refreshToken: data.refresh_token ?? config.refreshToken,
-    accessTokenExpiresAt: toExpiryIso(data.expires_in) ?? config.accessTokenExpiresAt,
-  }
-
-  saveGlobalConfig(nextConfig)
-  return nextConfig
 }
 
 async function prepareConfig(config: CliConfig): Promise<CliConfig> {
-  if (!shouldRefreshAccessToken(config)) {
-    if (isExpiredAuth0AccessToken(config) && !config.refreshToken) {
-      throw new Error('Auth0 access token expired. Run proxkey login again.')
-    }
-
-    return config
-  }
-
-  return refreshAuth0AccessToken(config)
+  return config
 }
 
 async function apiRequest<T>(config: CliConfig, pathName: string, init: RequestInit = {}): Promise<T> {
@@ -386,28 +238,6 @@ async function apiRequest<T>(config: CliConfig, pathName: string, init: RequestI
     throw new Error((data as { error?: string } | null)?.error ?? 'Request failed')
   }
   return data as T
-}
-
-async function getRemoteAuthConfig(apiBaseUrl: string): Promise<RemoteAuthConfig> {
-  const response = await fetch(`${apiBaseUrl.replace(/\/$/, '')}/api/auth/config`, {
-    headers: {
-      accept: 'application/json',
-    },
-  })
-
-  if (response.status === 404) {
-    return {
-      strategy: 'local',
-      auth0: null,
-    }
-  }
-
-  const data = await response.json().catch(() => null)
-  if (!response.ok) {
-    throw new Error((data as { error?: string } | null)?.error ?? 'Unable to load auth configuration.')
-  }
-
-  return data as RemoteAuthConfig
 }
 
 async function prompt(question: string): Promise<string> {
@@ -1254,165 +1084,6 @@ function normalizePlanInput(value: string): CliPlan | undefined {
   return PLAN_VALUES.includes(normalized as CliPlan) ? (normalized as CliPlan) : undefined
 }
 
-async function startAuth0DeviceFlow(auth0: NonNullable<RemoteAuthConfig['auth0']>): Promise<Auth0DeviceCodeResponse> {
-  const response = await fetch(`https://${auth0.domain}/oauth/device/code`, {
-    method: 'POST',
-    headers: {
-      accept: 'application/json',
-      'content-type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      client_id: auth0.cliClientId ?? '',
-      audience: auth0.audience,
-      scope: auth0.scope || AUTH0_DEFAULT_SCOPE,
-    }).toString(),
-  })
-
-  const data = (await response.json().catch(() => null)) as
-    | (Auth0DeviceCodeResponse & { error?: string; error_description?: string })
-    | null
-
-  if (!response.ok || !data?.device_code) {
-    throw new Error(data?.error_description ?? data?.error ?? 'Unable to start Auth0 device login.')
-  }
-
-  return data
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms)
-  })
-}
-
-async function pollForAuth0Token(args: {
-  auth0: NonNullable<RemoteAuthConfig['auth0']>
-  device: Auth0DeviceCodeResponse
-}): Promise<Auth0TokenResponse> {
-  let intervalMs = Math.max(1000, (args.device.interval ?? 5) * 1000)
-  const expiresAt = Date.now() + args.device.expires_in * 1000
-
-  while (Date.now() < expiresAt) {
-    await sleep(intervalMs)
-
-    const response = await fetch(`https://${args.auth0.domain}/oauth/token`, {
-      method: 'POST',
-      headers: {
-        accept: 'application/json',
-        'content-type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
-        device_code: args.device.device_code,
-        client_id: args.auth0.cliClientId ?? '',
-      }).toString(),
-    })
-
-    const data = (await response.json().catch(() => null)) as
-      | (Auth0TokenResponse & { error?: string; error_description?: string })
-      | null
-
-    if (response.ok && data?.access_token) {
-      return data
-    }
-
-    const errorCode = data?.error
-    if (errorCode === 'authorization_pending') {
-      continue
-    }
-
-    if (errorCode === 'slow_down') {
-      intervalMs += 5000
-      continue
-    }
-
-    if (errorCode === 'access_denied') {
-      throw new Error('Auth0 login was cancelled or denied.')
-    }
-
-    if (errorCode === 'expired_token') {
-      throw new Error('Auth0 device login expired. Run proxkey login again.')
-    }
-
-    throw new Error(data?.error_description ?? errorCode ?? 'Auth0 login failed.')
-  }
-
-  throw new Error('Auth0 device login timed out. Run proxkey login again.')
-}
-
-async function bootstrapAuth0Identity(apiBaseUrl: string, accessToken: string): Promise<Auth0BootstrapResponse> {
-  const config: CliConfig = {
-    apiBaseUrl,
-    accessToken,
-  }
-
-  try {
-    return await apiRequest<Auth0BootstrapResponse>(config, '/api/auth/bootstrap', {
-      method: 'POST',
-      body: JSON.stringify({}),
-    })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Auth0 sign-in failed.'
-    if (!message.includes(AUTH0_SIGNUP_HINT)) {
-      throw error
-    }
-
-    if (!process.stdin.isTTY) {
-      throw new Error(`${message} Re-run proxkey login in an interactive terminal or create the workspace in the web app first.`)
-    }
-
-    console.log('No ProxKey workspace exists for this Auth0 identity yet.')
-    const name = await prompt('Full name (optional, press enter to use your Auth0 profile): ')
-    const organizationName = await prompt('Workspace name: ')
-    if (!organizationName) {
-      throw new Error('Workspace name is required to finish Auth0 sign up.')
-    }
-
-    const requestedPlan = normalizePlanInput(await prompt('Plan [FREE/FOUNDER/TEAM/GROWTH/ENTERPRISE] (default FREE): ')) ?? 'FREE'
-
-    return apiRequest<Auth0BootstrapResponse>(config, '/api/auth/bootstrap', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: name || undefined,
-        organizationName,
-        plan: requestedPlan,
-      }),
-    })
-  }
-}
-
-async function handleAuth0Login(current: CliConfig, auth0: NonNullable<RemoteAuthConfig['auth0']>): Promise<void> {
-  if (!auth0.cliEnabled || !auth0.cliClientId) {
-    throw new Error('Auth0 CLI login is not configured on the backend. Set AUTH0_CLI_CLIENT_ID (or AUTH0_CLIENT_ID) or use proxkey auth set-key with an API key.')
-  }
-
-  const device = await startAuth0DeviceFlow(auth0)
-  console.log('Complete Auth0 login in your browser:')
-  console.log(device.verification_uri_complete ?? device.verification_uri)
-  console.log(`Code: ${device.user_code}`)
-
-  const token = await pollForAuth0Token({ auth0, device })
-  const bootstrap = await bootstrapAuth0Identity(current.apiBaseUrl, token.access_token)
-
-  saveGlobalConfig({
-    apiBaseUrl: current.apiBaseUrl,
-    accessToken: token.access_token,
-    refreshToken: token.refresh_token,
-    accessTokenExpiresAt: toExpiryIso(token.expires_in),
-    email: bootstrap.user.email,
-    authType: 'auth0',
-    auth0Domain: auth0.domain,
-    auth0ClientId: auth0.cliClientId,
-    auth0Audience: auth0.audience,
-    auth0Scope: auth0.scope || AUTH0_DEFAULT_SCOPE,
-  })
-
-  console.log(`Logged in as ${bootstrap.user.email}`)
-  if (!token.refresh_token) {
-    console.log('Auth0 did not issue a refresh token. Run proxkey login again when this access token expires.')
-  }
-}
-
 async function handleHelp(): Promise<void> {
   console.log(getUsageText())
 }
@@ -1424,12 +1095,6 @@ async function handleVersion(): Promise<void> {
 async function handleLogin(args: string[]): Promise<void> {
   const current = withApiBaseUrlOverride(loadConfig(), args)
   const apiBaseUrl = current.apiBaseUrl || DEFAULT_API_BASE_URL
-  const remoteAuth = await getRemoteAuthConfig(apiBaseUrl)
-
-  if (remoteAuth.strategy === 'auth0' && remoteAuth.auth0) {
-    await handleAuth0Login({ ...current, apiBaseUrl }, remoteAuth.auth0)
-    return
-  }
 
   const email = await prompt('Email: ')
   const password = await prompt('Password: ')
@@ -1910,9 +1575,6 @@ function describeAuth(config: CliConfig): string {
   }
   if (config.authType === 'api-key') {
     return 'api key stored'
-  }
-  if (config.authType === 'auth0') {
-    return config.email ? `Auth0 as ${config.email}` : 'Auth0'
   }
   if (config.authType === 'local') {
     return config.email ? `local as ${config.email}` : 'local'

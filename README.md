@@ -48,14 +48,13 @@ docker compose up -d
 
 ## Frontend + dashboard API
 
-The marketing shell and authenticated dashboard live under `frontend/`. See [frontend/README.md](frontend/README.md) for Auth0, Prisma, Railway/Vercel-style deployment, and npm scripts.
+The marketing shell and authenticated dashboard live under `frontend/`. See [frontend/README.md](frontend/README.md) for Prisma, Railway-style deployment, GitHub sign-in, and npm scripts.
 
 From monorepo root you can run the production wiring helper:
 
 ```bash
-pnpm run frontend:cli-setup           # Railway + Auth0 (see script for modes)
+pnpm run frontend:cli-setup           # Railway variables + deploy (see script)
 pnpm run frontend:cli-setup:railway
-pnpm run frontend:cli-setup:auth0
 ```
 
 Mirror split repos from [`scripts/repos-sync.config.json`](scripts/repos-sync.config.json) (website + optional CLI checkout):

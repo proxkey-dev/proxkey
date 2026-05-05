@@ -28,7 +28,7 @@ export function AuthModal({
   externalError = null,
 }: AuthModalProps) {
   const navigate = useNavigate()
-  const { authStrategy, signIn, signUp } = useAuth()
+  const { signIn, signUp } = useAuth()
   const [mode, setMode] = useState<AuthMode>(initialMode)
   const [plan, setPlan] = useState<PlanTier>(initialPlan === 'ENTERPRISE' ? 'TEAM' : initialPlan)
   const [name, setName] = useState('')
@@ -129,12 +129,8 @@ export function AuthModal({
                   </h2>
                   <p className="mt-3 text-sm leading-7 text-[#57544d]">
                     {mode === 'login'
-                      ? authStrategy === 'auth0'
-                        ? 'Continue through Auth0 Universal Login for this workspace.'
-                        : 'Sign in with your work email.'
-                      : authStrategy === 'auth0'
-                        ? 'Set the workspace details here, then complete identity verification through Auth0.'
-                        : 'Create an organization, provision the owner account, and land directly in the production dashboard.'}
+                      ? 'Sign in with your work email.'
+                      : 'Create an organization, provision the owner account, and land directly in the production dashboard.'}
                   </p>
                   {mode === 'signup' ? (
                     <div className="mt-4 inline-flex border border-[#eadfce] bg-[#faf8f4] px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-[#57544d]">
@@ -247,55 +243,39 @@ export function AuthModal({
                   </>
                 ) : null}
 
-                {authStrategy === 'local' ? (
-                  <>
-                    <div>
-                      <label
-                        htmlFor="auth-email"
-                        className="mb-2 block text-sm font-medium text-[#111]"
-                      >
-                        Work email
-                      </label>
-                      <input
-                        id="auth-email"
-                        type="email"
-                        value={email}
-                        onChange={(event) => setEmail(event.target.value)}
-                        className={inputClassName}
-                        placeholder="you@company.com"
-                        autoComplete="email"
-                        required
-                      />
-                    </div>
+                <div>
+                  <label htmlFor="auth-email" className="mb-2 block text-sm font-medium text-[#111]">
+                    Work email
+                  </label>
+                  <input
+                    id="auth-email"
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    className={inputClassName}
+                    placeholder="you@company.com"
+                    autoComplete="email"
+                    required
+                  />
+                </div>
 
-                    <div>
-                      <label
-                        htmlFor="auth-password"
-                        className="mb-2 block text-sm font-medium text-[#111]"
-                      >
-                        Password
-                      </label>
-                      <input
-                        id="auth-password"
-                        type="password"
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                        className={inputClassName}
-                        placeholder={
-                          mode === 'login' ? 'Enter your password' : 'Minimum 8 characters'
-                        }
-                        autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                        required
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <div className="border border-[#ece8df] bg-[#faf8f4] px-4 py-4 text-sm leading-7 text-[#57544d]">
-                    {mode === 'login'
-                      ? 'Your identity is managed by Auth0. Continue to Universal Login, then ProxKey will issue the workspace session after Auth0 confirms your email.'
-                      : 'Your email and password stay in Auth0. ProxKey only stores the workspace user, organization, and session needed to operate the triage dashboard.'}
-                  </div>
-                )}
+                <div>
+                  <label htmlFor="auth-password" className="mb-2 block text-sm font-medium text-[#111]">
+                    Password
+                  </label>
+                  <input
+                    id="auth-password"
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    className={inputClassName}
+                    placeholder={
+                      mode === 'login' ? 'Enter your password' : 'Minimum 8 characters'
+                    }
+                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                    required
+                  />
+                </div>
 
                 <div className="mt-auto grid gap-3 pt-2">
                   <button
@@ -305,19 +285,11 @@ export function AuthModal({
                   >
                     {submitting
                       ? mode === 'login'
-                        ? authStrategy === 'auth0'
-                          ? 'Redirecting to Auth0…'
-                          : 'Signing in…'
-                        : authStrategy === 'auth0'
-                          ? 'Redirecting to Auth0…'
-                          : 'Creating workspace…'
+                        ? 'Signing in…'
+                        : 'Creating workspace…'
                       : mode === 'login'
-                        ? authStrategy === 'auth0'
-                          ? 'Continue with Auth0'
-                          : 'Continue'
-                        : authStrategy === 'auth0'
-                          ? 'Continue with Auth0'
-                          : 'Create workspace'}
+                        ? 'Continue'
+                        : 'Create workspace'}
                   </button>
 
                   <button

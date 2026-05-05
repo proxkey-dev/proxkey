@@ -63,40 +63,15 @@ cd /Users/omer/Local_Repo/proxkey/frontend
 npm run dev
 ```
 
-## Auth0 setup
+## Authentication
 
-The active ProxKey shell uses Auth0 for web identity and keeps ProxKey’s own user, org, role, plan, API key, and triage state in Postgres.
+The dashboard supports **Sign in with GitHub** (session cookie via `GET /api/auth/github`), **email/password** registration and login against the Fastify API (`/api/auth/register`, `/api/auth/login`), and **API keys** for automation. User, org, role, and plan data live in Postgres.
 
-Frontend env:
+Frontend env: `VITE_API_BASE_URL` must point at the backend.
 
-- `VITE_AUTH0_DOMAIN`
-- `VITE_AUTH0_CLIENT_ID`
-- `VITE_AUTH0_AUDIENCE`
-- `VITE_AUTH0_CALLBACK_URL`
+Backend: configure `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` for the GitHub OAuth flow; set `DASHBOARD_SESSION_SECRET` (or `JWT_SECRET`) in production.
 
-Backend env:
-
-- `AUTH0_DOMAIN`
-- `AUTH0_AUDIENCE`
-- `AUTH0_CLI_CLIENT_ID`
-- `AUTH0_ISSUER_BASE_URL`
-
-Runtime flow:
-
-- Auth0 Universal Login signs the browser in with Authorization Code + PKCE.
-- The frontend fetches an Auth0 access token for `VITE_AUTH0_AUDIENCE`.
-- The frontend calls `POST /api/auth/bootstrap` with `Authorization: Bearer <access_token>`.
-- The Fastify backend validates the RS256 JWT via Auth0 JWKS, links or creates the local ProxKey user/org, and enforces product authorization from Postgres.
-- `proxkey login` detects Auth0 mode from `GET /api/auth/config` and uses the Auth0 device authorization flow when `AUTH0_CLI_CLIENT_ID` is configured.
-- CLI sessions store the Auth0 access token and refresh token locally so the CLI can refresh without a browser round-trip when Auth0 returns `offline_access`.
-- CI should keep using ProxKey-issued API keys via `proxkey auth set-key` or `PROXKEY_API_KEY`.
-
-The Auth0 Deploy CLI was installed user-globally with:
-
-```bash
-npm install -g auth0-deploy-cli --prefix /Users/omer/.npm-global
-export PATH="/Users/omer/.npm-global/bin:$PATH"
-```
+CLI: `proxkey login` prompts for email and password against `/api/auth/login`. Use `proxkey auth set-key` or `PROXKEY_API_KEY` for non-interactive API access.
 
 ## Key scripts
 
@@ -140,7 +115,7 @@ CLI:
 
 ## Auth and billing model
 
-- Browser auth uses Auth0 bearer tokens for the web app.
+- Browser sessions use GitHub OAuth or email/password tokens issued by the API.
 - The frontend no longer persists browser session tokens in `localStorage`.
 - API keys are hashed server-side and shown once at creation time.
 - Free and Founder plans hard-stop at the monthly packet cap.

@@ -176,25 +176,6 @@ export const proxkeyApi = {
     return data
   },
 
-  async bootstrap(body: { name?: string; organizationName?: string; plan?: PlanTier }) {
-    const data = await request<{
-      authenticated: boolean
-      user: AuthUser
-      organization: {
-        id: string
-        name: string
-        domain: string | null
-        plan?: PlanTier
-      } | null
-      accessToken?: string
-    }>('/api/auth/bootstrap', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    })
-
-    return data
-  },
-
   async me() {
     return request<{
       authenticated: boolean

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Production wiring: Railway backend (frontend/server) + Auth0 SPA URLs (optional).
+# Production wiring: Railway backend (frontend/server).
 #
 # Prerequisites:
 #   railway login   OR   RAILWAY_TOKEN (project token) for non-interactive / CI
@@ -10,14 +10,12 @@
 #
 # Usage (from monorepo root or frontend/):
 #   npm run prod:cli-setup --prefix frontend
-#   bash frontend/scripts/production-cli-setup.sh          # railway vars + deploy + auth0
-#   bash frontend/scripts/production-cli-setup.sh railway   # railway only
-#   bash frontend/scripts/production-cli-setup.sh auth0     # Auth0 SPA URLs only
+#   bash frontend/scripts/production-cli-setup.sh          # railway vars + deploy (default)
+#   bash frontend/scripts/production-cli-setup.sh railway   # same as default
 #   DRY_RUN=1 bash frontend/scripts/production-cli-setup.sh railway
 #
 # Env overrides:
 #   RAILWAY_TOKEN, RAILWAY_SERVICE, RAILWAY_ENVIRONMENT (production | staging | …)
-#   AUTH0_TENANT (e.g. proxkey.us.auth0.com) → passed as auth0 --tenant
 
 set -euo pipefail
 
@@ -28,9 +26,6 @@ SERVER_DIR="$WEBSITE_ROOT/server"
 : "${PRODUCTION_MARKETING_ORIGIN:=https://proxkey.dev}"
 : "${PRODUCTION_APP_ORIGIN:=https://app.proxkey.dev}"
 : "${PRODUCTION_API_ORIGIN:=https://api.proxkey.dev}"
-: "${AUTH0_DOMAIN:=proxkey.us.auth0.com}"
-: "${AUTH0_AUDIENCE:=https://api.proxkey.dev}"
-: "${AUTH0_SPA_CLIENT_ID:=YfIIMjNlzpDeoQUfqTTW1B9fq4r61J5f}"
 
 # First CORS origin = GitHub OAuth redirect base (see server/src/proxkey/dashboard-api.ts)
 : "${CORS_ALLOWED_ORIGINS:=${PRODUCTION_MARKETING_ORIGIN},https://www.proxkey.dev,${PRODUCTION_APP_ORIGIN}}"
@@ -39,11 +34,9 @@ DRY_RUN="${DRY_RUN:-0}"
 
 usage() {
   cat <<'EOF'
-Usage: production-cli-setup.sh [all|railway|auth0]
+Usage: production-cli-setup.sh [all|railway]
 
-  all     Set Railway variables, deploy frontend/server, then update Auth0 SPA URLs (default)
-  railway Set Railway variables for the API service and run railway up
-  auth0   Update Auth0 SPA app callbacks, web origins, and logout URLs (auth0 CLI)
+  all | railway   Set Railway variables for the API service and run railway up (default)
 
 Env / files:
   Optional secrets file: frontend/server/.env.railway.local (auto-sourced if present)
@@ -53,7 +46,6 @@ Env / files:
   RAILWAY_TOKEN      Project token (CI); skips interactive railway login check when set
   RAILWAY_SERVICE    railway -s <name-or-id>
   RAILWAY_ENVIRONMENT railway -e <env>
-  AUTH0_TENANT       auth0 --tenant <domain>
   DRY_RUN=1          Print actions only
 EOF
 }
@@ -102,14 +94,6 @@ railway_cmd() {
   fi
 }
 
-auth0_cmd() {
-  if [[ -n "${AUTH0_TENANT:-}" ]]; then
-    auth0 --tenant "$AUTH0_TENANT" "$@"
-  else
-    auth0 "$@"
-  fi
-}
-
 do_railway_variables() {
   if [[ "$DRY_RUN" != "1" ]]; then
     require_railway
@@ -124,7 +108,6 @@ do_railway_variables() {
 
   ensure_dashboard_secret
   local jwt="${JWT_SECRET:-$DASHBOARD_SESSION_SECRET}"
-  local issuer="${AUTH0_ISSUER_BASE_URL:-https://${AUTH0_DOMAIN}/}"
 
   cd "$WEBSITE_ROOT"
   echo "Setting Railway variables (secrets via stdin where needed)…"
@@ -153,10 +136,6 @@ do_railway_variables() {
     "APP_BASE_URL=$PRODUCTION_MARKETING_ORIGIN" \
     "APP_URL=$PRODUCTION_MARKETING_ORIGIN" \
     "API_BASE_URL=$PRODUCTION_API_ORIGIN" \
-    "AUTH0_DOMAIN=$AUTH0_DOMAIN" \
-    "AUTH0_AUDIENCE=$AUTH0_AUDIENCE" \
-    "AUTH0_ISSUER_BASE_URL=$issuer" \
-    "AUTH0_CLIENT_ID=$AUTH0_SPA_CLIENT_ID" \
     "${github_pair[@]}"
 }
 
@@ -169,34 +148,6 @@ do_railway_up() {
   cd "$WEBSITE_ROOT"
   echo "Deploying from $WEBSITE_ROOT (server/railway.toml; Docker build from server/)…"
   railway_cmd up
-}
-
-do_auth0() {
-  if ! command -v auth0 &>/dev/null; then
-    echo "auth0 CLI not found; install: brew install auth0/tap/auth0-cli" >&2
-    exit 1
-  fi
-  if [[ "$DRY_RUN" == "1" ]]; then
-    local tenant_note=""
-    [[ -n "${AUTH0_TENANT:-}" ]] && tenant_note="auth0 --tenant ${AUTH0_TENANT} "
-    echo "DRY_RUN: ${tenant_note}apps update $AUTH0_SPA_CLIENT_ID --callbacks … --origins … --logout-urls …"
-    return
-  fi
-  if ! auth0_cmd tenants list &>/dev/null; then
-    echo "Run: auth0 login  (use AUTH0_TENANT if you use multiple tenants)" >&2
-    exit 1
-  fi
-
-  local callbacks="${PRODUCTION_MARKETING_ORIGIN}/callback,${PRODUCTION_APP_ORIGIN}/callback,http://localhost:3000/callback,http://localhost:5173/callback"
-  local origins="${PRODUCTION_MARKETING_ORIGIN},https://www.proxkey.dev,${PRODUCTION_APP_ORIGIN},http://localhost:3000,http://localhost:5173"
-  local logouts="${PRODUCTION_MARKETING_ORIGIN},${PRODUCTION_APP_ORIGIN},https://www.proxkey.dev,http://localhost:3000,http://localhost:5173"
-
-  echo "Updating Auth0 SPA app $AUTH0_SPA_CLIENT_ID (callbacks, origins, web origins, logout URLs)…"
-  auth0_cmd apps update "$AUTH0_SPA_CLIENT_ID" \
-    --callbacks "$callbacks" \
-    --origins "$origins" \
-    --web-origins "$origins" \
-    --logout-urls "$logouts"
 }
 
 print_post() {
@@ -221,19 +172,9 @@ main() {
   load_secrets
 
   case "$mode" in
-    all)
+    all | railway)
       do_railway_variables
       do_railway_up
-      do_auth0
-      print_post
-      ;;
-    railway)
-      do_railway_variables
-      do_railway_up
-      print_post
-      ;;
-    auth0)
-      do_auth0
       print_post
       ;;
     *)

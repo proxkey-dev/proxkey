@@ -41,7 +41,7 @@ export type AuthenticatedUser = {
   role: UserRole
   status: UserStatus
   name: string
-  authType: 'session' | 'api-key' | 'auth0'
+  authType: 'session' | 'api-key'
   sessionId: string | null
   token: string
 }
