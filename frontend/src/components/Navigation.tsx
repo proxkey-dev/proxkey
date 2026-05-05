@@ -11,6 +11,7 @@ type NavigationProps = {
 
 const publicNavLinks = [
   { label: 'Home', href: '/' },
+  { label: 'About', href: '/about' },
   { label: 'Docs', href: '/docs' },
   { label: 'Get Started', href: '/dashboard' },
   { label: 'Status', href: '/status' },
@@ -18,6 +19,7 @@ const publicNavLinks = [
 
 const appNavLinks = [
   { label: 'Home', href: '/' },
+  { label: 'About', href: '/about' },
   { label: 'Workspaces', href: '/dashboard' },
   { label: 'Packets', href: '/dashboard#inbox' },
   { label: 'Integrations', href: '/settings/api-keys' },

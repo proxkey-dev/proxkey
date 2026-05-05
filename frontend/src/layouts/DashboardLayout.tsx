@@ -1,5 +1,5 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 const nav = [
@@ -88,6 +88,12 @@ export default function DashboardLayout() {
               </button>
             </div>
           </div>
+          <Link
+            to="/about"
+            className="mt-3 block text-xs text-[#6b6b6b] underline-offset-2 hover:text-[#e8e8e8] hover:underline"
+          >
+            About ProxKey
+          </Link>
         </div>
       </aside>
 

@@ -245,6 +245,15 @@ export function AboutPage() {
               hello@proxkey.dev
             </a>
             <span aria-hidden="true">|</span>
+            <a
+              href={apiUrl('/health')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[#e8e8e8]"
+            >
+              Status
+            </a>
+            <span aria-hidden="true">|</span>
             <Link to="/about" className="hover:text-[#e8e8e8]">
               About
             </Link>

@@ -124,6 +124,14 @@ export default function LoginPage() {
           <Link to="/" className="hover:text-[#6b6b6b]">
             Back to home
           </Link>
+          <span className="mx-2 text-[#2a2a2a]">·</span>
+          <Link to="/about" className="hover:text-[#6b6b6b]">
+            About
+          </Link>
+          <span className="mx-2 text-[#2a2a2a]">·</span>
+          <Link to="/docs" className="hover:text-[#6b6b6b]">
+            Docs
+          </Link>
         </p>
       </main>
     </div>

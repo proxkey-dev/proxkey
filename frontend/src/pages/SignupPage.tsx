@@ -208,6 +208,19 @@ export default function SignupPage() {
         <p className="mt-4 text-center text-xs text-[#3a3a3a]">
           Free tier includes up to 3 repos. No credit card required.
         </p>
+        <p className="mt-3 text-center text-xs text-[#3a3a3a]">
+          <Link to="/" className="hover:text-[#6b6b6b]">
+            Back to home
+          </Link>
+          <span className="mx-2 text-[#2a2a2a]">·</span>
+          <Link to="/about" className="hover:text-[#6b6b6b]">
+            About
+          </Link>
+          <span className="mx-2 text-[#2a2a2a]">·</span>
+          <Link to="/docs" className="hover:text-[#6b6b6b]">
+            Docs
+          </Link>
+        </p>
       </main>
     </div>
   )
