@@ -265,6 +265,15 @@ export function ProxKeyMarketingLandingPage() {
 
           <div className="hidden items-center gap-5 text-sm text-[#6b6b6b] md:flex">
             <Link
+              to="/about"
+              className="transition-colors hover:text-[#e8e8e8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4ade80]"
+            >
+              About
+            </Link>
+            <span aria-hidden="true" className="text-[#2a2a2a]">
+              |
+            </span>
+            <Link
               to="/docs"
               className="transition-colors hover:text-[#e8e8e8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4ade80]"
             >
@@ -307,6 +316,9 @@ export function ProxKeyMarketingLandingPage() {
           className={`border-t border-[#1e1e1e] bg-[#0a0a0a] md:hidden ${mobileNavOpen ? 'block' : 'hidden'}`}
         >
           <div className="mx-auto flex max-w-5xl flex-col gap-1 px-4 py-4 text-sm text-[#6b6b6b]">
+            <Link to="/about" className="py-2 hover:text-[#e8e8e8]" onClick={() => setMobileNavOpen(false)}>
+              About
+            </Link>
             <Link to="/docs" className="py-2 hover:text-[#e8e8e8]" onClick={() => setMobileNavOpen(false)}>
               Docs
             </Link>
@@ -556,6 +568,12 @@ export function ProxKeyMarketingLandingPage() {
             >
               Status
             </a>
+            <span aria-hidden="true" className="hidden text-[#2a2a2a] sm:inline">
+              |
+            </span>
+            <Link to="/about" className="transition-colors hover:text-[#e8e8e8]">
+              About
+            </Link>
             <span aria-hidden="true" className="hidden text-[#2a2a2a] sm:inline">
               |
             </span>

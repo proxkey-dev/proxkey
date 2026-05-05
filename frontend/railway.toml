@@ -1,0 +1,17 @@
+# ProxKey Vite SPA (marketing + dashboard). Watch paths are evaluated from the Git repo root.
+# If this repo is frontend-only (no parent `frontend/` folder), change patterns to drop the
+# `frontend/` prefix (e.g. `src/**`, `index.html`, …).
+[build]
+watchPatterns = [
+  "frontend/src/**",
+  "frontend/public/**",
+  "frontend/index.html",
+  "frontend/vite.config.ts",
+  "frontend/package.json",
+  "frontend/package-lock.json",
+  "frontend/tsconfig.json",
+  "frontend/tailwind.config.js",
+  "frontend/postcss.config.js",
+  "frontend/src/index.css",
+  "frontend/railway.toml",
+]

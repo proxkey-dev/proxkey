@@ -1,11 +1,15 @@
 name: Deploy to Railway
 
+# Deploys the Railway **API** (server/) only. SPA changes under src/ do not trigger this job.
+# For the static app, use a separate Railway service with frontend/railway.toml watch patterns
+# or the monorepo root Docker deploy (.github/workflows/deploy.yml).
 on:
   push:
     branches:
       - main
     paths:
       - 'server/**'
+      - 'server/railway.toml'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
 

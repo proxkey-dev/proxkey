@@ -1,6 +1,31 @@
 import { Link } from 'react-router-dom'
 import { apiUrl } from '../../lib/api'
 
+function MoneyBackdrop() {
+  const symbols = ['$', '¢', '$', '$', '¢', '$']
+  const positions = [
+    'left-[8%] top-[12%] text-5xl md:text-7xl',
+    'right-[10%] top-[8%] text-4xl md:text-6xl',
+    'left-[18%] bottom-[18%] text-3xl md:text-5xl',
+    'right-[22%] bottom-[22%] text-5xl md:text-6xl',
+    'left-[42%] top-[4%] text-2xl md:text-4xl opacity-60',
+    'right-[38%] bottom-[8%] text-3xl md:text-5xl',
+  ]
+
+  return (
+    <div className="about-money-layer absolute inset-0 overflow-hidden" aria-hidden="true">
+      {symbols.map((ch, i) => (
+        <span
+          key={i}
+          className={`about-money-symbol absolute font-mono font-bold text-[#4ade80] ${positions[i] ?? ''}`}
+        >
+          {ch}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function XIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="h-5 w-5">
@@ -62,16 +87,20 @@ export function AboutPage() {
 
       <main>
         {/* Hero */}
-        <section className="mx-auto max-w-5xl px-4 pb-14 pt-14 md:px-6 md:pt-20">
-          <p className="font-mono text-xs font-semibold uppercase tracking-widest text-[#4ade80]">
-            About
-          </p>
-          <h1 className="mt-4 max-w-2xl text-4xl font-bold leading-tight tracking-tight text-[#e8e8e8] md:text-5xl md:leading-[1.1]">
-            ProxKey
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[#6b6b6b] md:text-xl">
-            CI spend attribution for engineering organizations.
-          </p>
+        <section className="relative mx-auto max-w-5xl px-4 pb-14 pt-14 md:px-6 md:pt-20">
+          <MoneyBackdrop />
+          <div className="relative z-10">
+            <p className="font-mono text-xs font-semibold uppercase tracking-widest text-[#4ade80]">
+              About
+            </p>
+            <h1 className="mt-4 max-w-2xl text-4xl font-bold leading-tight tracking-tight text-[#e8e8e8] md:text-5xl md:leading-[1.1]">
+              About ProxKey
+            </h1>
+            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[#b8b8b8] md:text-xl">
+              CI spend attribution for engineering organizations — mapped to repos, PRs, and the work
+              that drove it.
+            </p>
+          </div>
         </section>
 
         {/* Product */}
@@ -86,14 +115,13 @@ export function AboutPage() {
                   What we build
                 </h2>
                 <p className="mt-6 text-base leading-relaxed text-[#e8e8e8] md:text-lg">
-                  ProxKey connects to GitHub Actions and attributes CI spend to the exact repo, team,
-                  PR, and test suite that caused it.
+                  ProxKey connects to GitHub Actions and attributes CI spend to the exact repo,
+                  team, PR, and test suite that caused it.
                 </p>
-                <p className="mt-4 text-base leading-relaxed text-[#6b6b6b]">
-                  It helps engineering organizations see where CI money is going, identify waste, and
-                  make faster decisions about flaky tests, redundant runs, and inefficient pipelines.
-                  Every CI dollar is traced back to the code change that spent it — giving teams the
-                  visibility they need to act.
+                <p className="mt-4 text-base leading-relaxed text-[#6b6b6b] md:text-lg">
+                  It helps engineering organizations see where CI money is going, identify waste,
+                  and make faster decisions about flaky tests, redundant runs, and inefficient
+                  pipelines.
                 </p>
               </div>
 
@@ -125,51 +153,65 @@ export function AboutPage() {
 
             <div className="mt-10 grid gap-10 md:grid-cols-[auto_1fr] md:gap-16">
               <div className="shrink-0">
-                <div className="h-20 w-20 rounded border border-[#1e1e1e] bg-[#111111] flex items-center justify-center font-mono text-2xl font-bold text-[#4ade80]">
-                  OK
+                <div className="relative flex h-24 w-24 items-center justify-center rounded border border-[#1e1e1e] bg-[#111111] font-mono text-3xl font-bold text-[#4ade80]">
+                  <span className="about-money-symbol inline-block">$</span>
                 </div>
               </div>
 
               <div>
                 <h3 className="text-xl font-semibold tracking-tight text-[#e8e8e8]">Omer Khan</h3>
                 <p className="mt-1 font-mono text-xs uppercase tracking-widest text-[#4b4b4b]">
-                  Software &amp; Systems Engineer
+                  Founder
                 </p>
-                <p className="mt-5 max-w-xl text-base leading-relaxed text-[#6b6b6b]">
-                  Focused on developer infrastructure, CI systems, and intelligent tooling for
-                  engineering teams. Building ProxKey to bring cost transparency to the layer of the
-                  stack that engineering organizations spend the most on — and understand the least.
+                <p className="mt-5 max-w-xl text-base leading-relaxed text-[#b8b8b8] md:text-lg">
+                  Omer Khan is a software and systems engineer focused on developer infrastructure,
+                  CI systems, and intelligent tooling for engineering teams.
                 </p>
 
-                <div className="mt-8 flex flex-wrap items-center gap-4">
-                  <a
-                    href="https://x.com/notomerkhan"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 rounded border border-[#1e1e1e] bg-[#111111] px-4 py-2.5 font-mono text-xs font-medium text-[#6b6b6b] transition-colors hover:border-[#2a2a2a] hover:text-[#e8e8e8]"
-                  >
-                    <XIcon />
-                    <span>@notomerkhan</span>
-                  </a>
-                  <a
-                    href="https://linkedin.com/in/notomer"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 rounded border border-[#1e1e1e] bg-[#111111] px-4 py-2.5 font-mono text-xs font-medium text-[#6b6b6b] transition-colors hover:border-[#2a2a2a] hover:text-[#e8e8e8]"
-                  >
-                    <LinkedInIcon />
-                    <span>notomer</span>
-                  </a>
-                  <a
-                    href="https://notomer.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 rounded border border-[#1e1e1e] bg-[#111111] px-4 py-2.5 font-mono text-xs font-medium text-[#6b6b6b] transition-colors hover:border-[#2a2a2a] hover:text-[#e8e8e8]"
-                  >
-                    <GlobeIcon />
-                    <span>notomer.com</span>
-                  </a>
-                </div>
+                <h4
+                  id="links-heading"
+                  className="mt-10 font-mono text-xs font-semibold uppercase tracking-widest text-[#4ade80]"
+                >
+                  Links
+                </h4>
+                <ul className="mt-4 flex flex-col gap-3 font-mono text-sm text-[#6b6b6b]" aria-labelledby="links-heading">
+                  <li>
+                    <span className="text-[#4b4b4b]">X · </span>
+                    <a
+                      href="https://x.com/notomerkhan"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-[#e8e8e8] underline-offset-4 hover:text-[#4ade80] hover:underline"
+                    >
+                      <XIcon />
+                      x.com/notomerkhan
+                    </a>
+                  </li>
+                  <li>
+                    <span className="text-[#4b4b4b]">LinkedIn · </span>
+                    <a
+                      href="https://linkedin.com/in/notomer"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-[#e8e8e8] underline-offset-4 hover:text-[#4ade80] hover:underline"
+                    >
+                      <LinkedInIcon />
+                      linkedin.com/in/notomer
+                    </a>
+                  </li>
+                  <li>
+                    <span className="text-[#4b4b4b]">Website · </span>
+                    <a
+                      href="https://notomer.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-[#e8e8e8] underline-offset-4 hover:text-[#4ade80] hover:underline"
+                    >
+                      <GlobeIcon />
+                      notomer.com
+                    </a>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>

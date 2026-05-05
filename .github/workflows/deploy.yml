@@ -3,6 +3,16 @@ name: Deploy
 on:
   push:
     branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'apps/**'
+      - 'packages/**'
+      - 'infra/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'tsconfig.json'
+      - '.github/workflows/deploy.yml'
 
 concurrency:
   group: deploy-${{ github.workflow }}-${{ github.ref }}

@@ -1,6 +1,12 @@
 [build]
 builder = "RAILPACK"
 buildCommand = "npm ci && npm run prisma:generate && npm run build"
+# Redeploy API only when the Node service changes (not SPA edits under frontend/src).
+# Paths are from the Git repo root; drop `frontend/` if this service lives in a frontend-only repo.
+watchPatterns = [
+  "frontend/server/**",
+  "frontend/server/railway.toml",
+]
 
 [deploy]
 # DB was created outside Prisma Migrate history; `migrate deploy` fails with P3005. Apply schema with
