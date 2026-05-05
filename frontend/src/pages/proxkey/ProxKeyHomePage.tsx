@@ -86,7 +86,7 @@ export default function ProxKeyHomePage() {
             </p>
             <div className="mt-8">
               <Link
-                to={user ? '/dashboard' : '/login'}
+                to={user ? '/dashboard' : '/signup'}
                 className="inline-flex min-h-12 items-center justify-center border border-[#ff5a1f] bg-[#ff5a1f] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-white"
               >
                 Start triaging incidents
@@ -284,7 +284,7 @@ Candidates:
             </p>
           </div>
           <Link
-            to={user ? '/dashboard' : '/login'}
+            to={user ? '/dashboard' : '/signup'}
             className="inline-flex min-h-12 items-center justify-center border border-[#ff5a1f] bg-[#ff5a1f] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-white"
           >
             Start triaging incidents

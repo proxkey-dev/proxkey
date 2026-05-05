@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { apiUrl } from '../../lib/api'
 
 function XIcon() {
   return (
@@ -76,12 +75,12 @@ export function AboutPage() {
               Sign in
             </Link>
             <span aria-hidden="true">|</span>
-            <a
-              href={apiUrl('/api/auth/github')}
+            <Link
+              to="/signup"
               className="rounded border border-[#4ade80] bg-[#4ade80] px-3 py-2 font-mono text-xs font-semibold text-black transition-opacity hover:opacity-90 md:text-sm"
             >
               Get started
-            </a>
+            </Link>
           </div>
         </nav>
       </header>
@@ -230,12 +229,12 @@ export function AboutPage() {
               Start in 2 minutes.
             </h2>
             <p className="mt-3 text-[#6b6b6b]">Free for up to 3 repos. No credit card required.</p>
-            <a
-              href={apiUrl('/api/auth/github')}
+            <Link
+              to="/signup"
               className="mt-8 inline-flex justify-center rounded bg-[#4ade80] px-6 py-3 font-mono text-sm font-semibold text-black transition-opacity hover:opacity-90"
             >
-              Connect GitHub Actions
-            </a>
+              Get started
+            </Link>
           </div>
         </section>
       </main>

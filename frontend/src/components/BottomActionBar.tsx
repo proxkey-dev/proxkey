@@ -72,8 +72,8 @@ export function BottomActionBar() {
           </button>
         </div>
         <div className="flex gap-2">
-          <ActionButton label="Generate sample packet" onClick={() => navigate('/demo')} />
-          <ActionButton label="Sign in" primary onClick={() => navigate('/login')} />
+          <ActionButton label="Get started" primary onClick={() => navigate('/signup')} />
+          <ActionButton label="Sign in" onClick={() => navigate('/login')} />
         </div>
       </div>
     </div>

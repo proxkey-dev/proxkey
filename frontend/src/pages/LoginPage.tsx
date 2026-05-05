@@ -1,13 +1,18 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { apiUrl } from '../lib/api'
+import { AuthMethodButtons } from '../components/auth/AuthMethodButtons'
 
 export default function LoginPage() {
-  const { user, loading, authError, clearAuthError } = useAuth()
+  const { user, loading, authError, clearAuthError, signIn } = useAuth()
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [oauthNotice, setOauthNotice] = useState<string | null>(null)
+
+  const [emailOpen, setEmailOpen] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
   useEffect(() => {
     if (!loading && user) {
@@ -21,60 +26,137 @@ export default function LoginPage() {
     }
   }, [authError])
 
+  async function submitEmail(e: FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setOauthNotice(null)
+    if (!email.trim()) {
+      setError('Enter your email.')
+      return
+    }
+    if (!password) {
+      setError('Enter your password.')
+      return
+    }
+    setBusy(true)
+    const result = await signIn(email.trim().toLowerCase(), password)
+    setBusy(false)
+    if (result.error) {
+      setError(result.error.message)
+    }
+  }
+
   if (loading) {
     return <div className="min-h-screen bg-[#0a0a0a]" />
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-[#0a0a0a] px-4 text-[#e8e8e8]">
-      <main className="w-full max-w-sm">
+    <div className="grid min-h-screen place-items-center bg-[#0a0a0a] px-4 py-12 text-[#e8e8e8]">
+      <main className="w-full max-w-md">
         <div className="mb-8 text-center">
           <p className="font-mono text-2xl font-semibold tracking-tight">ProxKey</p>
           <p className="mt-1 text-sm text-[#6b6b6b]">Every CI dollar, explained.</p>
         </div>
 
-        <div className="rounded-xl border border-[#1e1e1e] bg-[#111111] p-8">
-          <h1 className="mb-1 text-base font-semibold">Sign in to your workspace</h1>
-          <p className="mb-6 text-xs text-[#6b6b6b]">
-            Sign in with GitHub (redirects to the ProxKey API to set your session).
+        <div className="rounded-xl border border-[#1e1e1e] bg-[#111111] p-6 sm:p-8">
+          <h1 className="text-base font-semibold">Sign in</h1>
+          <p className="mt-2 text-xs text-[#6b6b6b]">
+            Use GitHub (session via the ProxKey API), or email and password. Google and Apple need
+            OAuth on the API first.
           </p>
 
-          {error && (
-            <div className="mb-4 rounded border border-red-900/50 bg-red-950/40 px-3 py-2 text-xs text-red-400">
+          {oauthNotice ? (
+            <div className="mt-4 rounded border border-amber-900/40 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
+              {oauthNotice}
+            </div>
+          ) : null}
+          {error ? (
+            <div className="mt-4 rounded border border-red-900/50 bg-red-950/40 px-3 py-2 text-xs text-red-400">
               {error}
             </div>
-          )}
+          ) : null}
 
-          <a
-            href={apiUrl('/api/auth/github')}
-            onClick={() => {
-              setBusy(true)
-              setError(null)
-              clearAuthError()
-            }}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#e8e8e8] px-4 py-3 text-sm font-semibold text-[#0a0a0a] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4ade80]"
-          >
-            {busy ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#0a0a0a]/30 border-t-[#0a0a0a]" />
-            ) : (
-              <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="currentColor" aria-hidden>
-                <path
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                  d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"
+          <div className="mt-6">
+            <AuthMethodButtons
+              onGitHubClick={() => {
+                clearAuthError()
+                setError(null)
+              }}
+              onGoogleClick={() =>
+                setOauthNotice(
+                  'Google sign-in requires OAuth credentials on the API. Use GitHub or email for now.',
+                )
+              }
+              onAppleClick={() =>
+                setOauthNotice(
+                  'Sign in with Apple requires OAuth credentials on the API. Use GitHub or email for now.',
+                )
+              }
+              onEmailClick={() => {
+                setOauthNotice(null)
+                setEmailOpen(true)
+              }}
+              googleDisabled={false}
+              appleDisabled={false}
+            />
+          </div>
+
+          {emailOpen ? (
+            <form className="mt-8 space-y-4 border-t border-[#1e1e1e] pt-8" onSubmit={submitEmail}>
+              <p className="text-xs font-medium uppercase tracking-wider text-[#6b6b6b]">
+                Email & password
+              </p>
+              <div>
+                <label htmlFor="li-email" className="mb-1.5 block text-xs text-[#a8a8a8]">
+                  Email
+                </label>
+                <input
+                  id="li-email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] px-3 py-2.5 text-sm outline-none focus:border-[#4ade80]"
+                  required
                 />
-              </svg>
-            )}
-            Continue with GitHub
-          </a>
+              </div>
+              <div>
+                <label htmlFor="li-pass" className="mb-1.5 block text-xs text-[#a8a8a8]">
+                  Password
+                </label>
+                <input
+                  id="li-pass"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] px-3 py-2.5 text-sm outline-none focus:border-[#4ade80]"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={busy}
+                className="w-full rounded-lg bg-[#e8e8e8] py-3 text-sm font-semibold text-[#0a0a0a] disabled:opacity-50"
+              >
+                {busy ? 'Signing in…' : 'Sign in'}
+              </button>
+            </form>
+          ) : null}
         </div>
 
         <p className="mt-6 text-center text-xs text-[#3a3a3a]">
-          Free for up to 3 repos. No credit card required.
+          New to ProxKey?{' '}
+          <Link to="/signup" className="font-medium text-[#e8e8e8] hover:text-[#4ade80]">
+            Create an account
+          </Link>
         </p>
         <p className="mt-2 text-center text-xs text-[#3a3a3a]">
+          Free for up to 3 repos. No credit card required.
+        </p>
+        <p className="mt-4 text-center text-[11px] text-[#3a3a3a]">
           <Link to="/" className="hover:text-[#6b6b6b]">
-            Back to home
+            Home
           </Link>
           <span className="mx-2 text-[#2a2a2a]">·</span>
           <Link to="/about" className="hover:text-[#6b6b6b]">

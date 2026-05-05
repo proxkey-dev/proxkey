@@ -193,7 +193,7 @@ export default function ProxKeyPricingPage() {
 
   async function handlePlanClick(plan: PlanTier): Promise<void> {
     if (!user) {
-      navigate('/login')
+      navigate('/signup')
       return
     }
 

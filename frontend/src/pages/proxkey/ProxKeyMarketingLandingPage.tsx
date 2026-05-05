@@ -292,13 +292,13 @@ export function ProxKeyMarketingLandingPage() {
             <span aria-hidden="true" className="text-[#2a2a2a]">
               |
             </span>
-            <a
-              href={NavGitHubHref()}
+            <Link
+              to="/signup"
               className="rounded-lg border border-[#4ade80] bg-[#4ade80] px-3.5 py-2 text-[13px] font-semibold text-[#0a0a0a] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4ade80]"
               style={{ fontFamily: MONO }}
             >
               Get started
-            </a>
+            </Link>
           </div>
         </nav>
 
@@ -321,14 +321,14 @@ export function ProxKeyMarketingLandingPage() {
             >
               Sign in
             </Link>
-            <a
-              href={NavGitHubHref()}
+            <Link
+              to="/signup"
               className="mt-2 inline-flex w-full justify-center rounded-lg border border-[#4ade80] bg-[#4ade80] px-3.5 py-2.5 text-center font-semibold text-[#0a0a0a]"
               style={{ fontFamily: MONO }}
               onClick={() => setMobileNavOpen(false)}
             >
               Get started
-            </a>
+            </Link>
           </div>
         </div>
       </header>

@@ -26,6 +26,7 @@ export default function App() {
         <Route path="/" element={<RootRedirectPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/get-started" element={<Navigate to="/signup" replace />} />
         <Route path="/callback" element={<CallbackPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/status" element={<StatusPage />} />
