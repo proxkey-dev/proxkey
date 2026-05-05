@@ -1,31 +1,6 @@
 import { Link } from 'react-router-dom'
 import { apiUrl } from '../../lib/api'
 
-function MoneyBackdrop() {
-  const symbols = ['$', '¢', '$', '$', '¢', '$']
-  const positions = [
-    'left-[8%] top-[12%] text-5xl md:text-7xl',
-    'right-[10%] top-[8%] text-4xl md:text-6xl',
-    'left-[18%] bottom-[18%] text-3xl md:text-5xl',
-    'right-[22%] bottom-[22%] text-5xl md:text-6xl',
-    'left-[42%] top-[4%] text-2xl md:text-4xl opacity-60',
-    'right-[38%] bottom-[8%] text-3xl md:text-5xl',
-  ]
-
-  return (
-    <div className="about-money-layer absolute inset-0 overflow-hidden" aria-hidden="true">
-      {symbols.map((ch, i) => (
-        <span
-          key={i}
-          className={`about-money-symbol absolute font-mono font-bold text-[#4ade80] ${positions[i] ?? ''}`}
-        >
-          {ch}
-        </span>
-      ))}
-    </div>
-  )
-}
-
 function XIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="h-5 w-5">
@@ -91,20 +66,17 @@ export function AboutPage() {
 
       <main>
         {/* Hero */}
-        <section className="relative mx-auto max-w-5xl px-4 pb-14 pt-14 md:px-6 md:pt-20">
-          <MoneyBackdrop />
-          <div className="relative z-10">
-            <p className="font-mono text-xs font-semibold uppercase tracking-widest text-[#4ade80]">
-              About
-            </p>
-            <h1 className="mt-4 max-w-2xl text-4xl font-bold leading-tight tracking-tight text-[#e8e8e8] md:text-5xl md:leading-[1.1]">
-              About ProxKey
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[#b8b8b8] md:text-xl">
-              CI spend attribution for engineering organizations — mapped to repos, PRs, and the work
-              that drove it.
-            </p>
-          </div>
+        <section className="mx-auto max-w-5xl px-4 pb-14 pt-14 md:px-6 md:pt-20">
+          <p className="font-mono text-xs font-semibold uppercase tracking-widest text-[#4ade80]">
+            About
+          </p>
+          <h1 className="mt-4 max-w-2xl text-4xl font-bold leading-tight tracking-tight text-[#e8e8e8] md:text-5xl md:leading-[1.1]">
+            About ProxKey
+          </h1>
+          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[#b8b8b8] md:text-xl">
+            CI spend attribution for engineering organizations — mapped to repos, PRs, and the work
+            that drove it.
+          </p>
         </section>
 
         {/* Product */}
@@ -157,8 +129,11 @@ export function AboutPage() {
 
             <div className="mt-10 grid gap-10 md:grid-cols-[auto_1fr] md:gap-16">
               <div className="shrink-0">
-                <div className="relative flex h-24 w-24 items-center justify-center rounded border border-[#1e1e1e] bg-[#111111] font-mono text-3xl font-bold text-[#4ade80]">
-                  <span className="about-money-symbol inline-block">$</span>
+                <div
+                  className="flex h-24 w-24 select-none items-center justify-center rounded border border-[#1e1e1e] bg-[#111111] font-mono text-2xl font-semibold tracking-tight text-[#4ade80] md:h-28 md:w-28 md:text-[1.85rem]"
+                  aria-hidden="true"
+                >
+                  OK
                 </div>
               </div>
 
@@ -178,41 +153,50 @@ export function AboutPage() {
                 >
                   Links
                 </h4>
-                <ul className="mt-4 flex flex-col gap-3 font-mono text-sm text-[#6b6b6b]" aria-labelledby="links-heading">
+                <ul
+                  className="mt-4 flex flex-col gap-4 font-mono text-sm text-[#e8e8e8]"
+                  aria-labelledby="links-heading"
+                >
                   <li>
-                    <span className="text-[#4b4b4b]">X · </span>
                     <a
                       href="https://x.com/notomerkhan"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-[#e8e8e8] underline-offset-4 hover:text-[#4ade80] hover:underline"
+                      className="inline-flex items-center gap-2.5 underline-offset-4 transition-colors hover:text-[#4ade80] hover:underline"
                     >
                       <XIcon />
-                      x.com/notomerkhan
+                      <span className="text-[#5c5c5c]" aria-hidden>
+                        ·
+                      </span>
+                      <span>x.com/notomerkhan</span>
                     </a>
                   </li>
                   <li>
-                    <span className="text-[#4b4b4b]">LinkedIn · </span>
                     <a
                       href="https://linkedin.com/in/notomer"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-[#e8e8e8] underline-offset-4 hover:text-[#4ade80] hover:underline"
+                      className="inline-flex items-center gap-2.5 underline-offset-4 transition-colors hover:text-[#4ade80] hover:underline"
                     >
                       <LinkedInIcon />
-                      linkedin.com/in/notomer
+                      <span className="text-[#5c5c5c]" aria-hidden>
+                        ·
+                      </span>
+                      <span>linkedin.com/in/notomer</span>
                     </a>
                   </li>
                   <li>
-                    <span className="text-[#4b4b4b]">Website · </span>
                     <a
                       href="https://notomer.com"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-[#e8e8e8] underline-offset-4 hover:text-[#4ade80] hover:underline"
+                      className="inline-flex items-center gap-2.5 underline-offset-4 transition-colors hover:text-[#4ade80] hover:underline"
                     >
                       <GlobeIcon />
-                      notomer.com
+                      <span className="text-[#5c5c5c]" aria-hidden>
+                        ·
+                      </span>
+                      <span>notomer.com</span>
                     </a>
                   </li>
                 </ul>
